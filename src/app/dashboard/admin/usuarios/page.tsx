@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/feedback";
+import { EmptyState } from "@/components/ui/empty-state";
 import { formatDataBR } from "@/lib/format";
 import {
   MudarRoleSelect,
@@ -52,6 +53,9 @@ export default async function UsuariosAdminPage() {
         }}
       />
 
+      {usuarios.length === 0 ? (
+        <EmptyState tipo="usuarios" />
+      ) : (
       <div className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--background-elevated)]">
         <table className="w-full text-sm">
           <thead className="bg-black/30 text-left text-xs uppercase tracking-wide text-[var(--muted)]">
@@ -121,6 +125,7 @@ export default async function UsuariosAdminPage() {
           </tbody>
         </table>
       </div>
+      )}
 
       <div className="mt-4 flex justify-end">
         <Link

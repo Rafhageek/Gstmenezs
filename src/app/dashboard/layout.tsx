@@ -8,6 +8,8 @@ import { CommandPalette } from "@/components/command-palette";
 import { NavLink } from "@/components/nav-link";
 import { NavDropdown } from "@/components/nav-dropdown";
 import { UserMenu } from "@/components/user-menu";
+import { Footer } from "@/components/footer";
+import { ThemeToggle } from "@/components/theme-toggle";
 import type {
   Profile,
   ParcelaProxima,
@@ -86,7 +88,7 @@ export default async function DashboardLayout({
           >
             <BrandLogo size={34} />
             <div className="leading-tight">
-              <p className="text-[9px] uppercase tracking-[0.2em] text-[var(--muted)]">
+              <p className="font-serif-brand text-[11px] tracking-wide text-[var(--gold)]/90">
                 Menezes Advocacia
               </p>
               <p className="text-sm font-semibold tracking-tight">
@@ -144,6 +146,7 @@ export default async function DashboardLayout({
           {/* Ações à direita */}
           <div className="flex shrink-0 items-center gap-2">
             <CommandPalette />
+            <ThemeToggle />
             <NotificationsBell
               proximas={proximas}
               atrasadas={atrasadas}
@@ -163,6 +166,8 @@ export default async function DashboardLayout({
       <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 md:px-6 md:py-8">
         {children}
       </main>
+
+      <Footer />
     </div>
   );
 }

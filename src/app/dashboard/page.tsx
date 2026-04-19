@@ -5,6 +5,9 @@ import { FluxoMensalChart } from "@/components/charts/fluxo-mensal-chart";
 import { CessoesPizzaChart } from "@/components/charts/cessoes-pizza-chart";
 import { CessaoProgressoPizza } from "@/components/charts/cessao-progresso-pizza";
 import { AgingBuckets } from "@/components/dashboard/aging-buckets";
+import { KpiPrimary } from "@/components/dashboard/kpi-primary";
+import { AnimatedCounter } from "@/components/ui/animated-counter";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   formatBRL,
   formatDataBR,
@@ -103,22 +106,26 @@ export default async function DashboardPage() {
         </p>
       </header>
 
-      {/* KPIs linha 1 */}
-      <section className="grid grid-cols-1 gap-4 md:grid-cols-4">
-        <Kpi label="Volume total" value={formatBRL(totais.total)} />
-        <Kpi
+      {/* KPI primário + secundários */}
+      <section className="grid grid-cols-1 gap-4 lg:grid-cols-4">
+        {/* Primário destacado — ocupa 2 colunas no desktop */}
+        <div className="lg:col-span-2">
+          <KpiPrimary
+            label="Saldo a receber"
+            value={totais.saldo}
+            variacao={variacao}
+            sub={`${cessoes.length} cessão${cessoes.length === 1 ? "" : "ões"} ativa${cessoes.length === 1 ? "" : "s"} · ${formatBRL(totais.total)} volume total`}
+            icon={<IconMoney />}
+          />
+        </div>
+        <KpiAnimado
           label="Recebido"
-          value={formatBRL(totais.pago)}
+          value={totais.pago}
           accent="success"
         />
-        <Kpi
-          label="Saldo a receber"
-          value={formatBRL(totais.saldo)}
-          accent="gold"
-        />
-        <Kpi
+        <KpiAnimado
           label="Em atraso"
-          value={formatBRL(valorAtrasado)}
+          value={valorAtrasado}
           accent={valorAtrasado > 0 ? "danger" : "muted"}
           sub={`${inadimplentes.length} parcela${inadimplentes.length === 1 ? "" : "s"}`}
         />
@@ -300,7 +307,7 @@ export default async function DashboardPage() {
         </header>
 
         {cessoes.length === 0 ? (
-          <EmptyState />
+          <EmptyState tipo="cessoes" />
         ) : (
           <div className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--background-elevated)]">
             <table className="w-full text-sm">
@@ -387,7 +394,7 @@ function Kpi({
     warning: "text-[var(--warning)]",
   };
   return (
-    <div className="rounded-xl border border-[var(--border)] bg-[var(--background-elevated)] p-5">
+    <div className="rounded-xl border border-[var(--border)] bg-[var(--background-elevated)] p-5 transition-colors hover:border-[var(--gold)]/30">
       <p className="text-xs uppercase tracking-wide text-[var(--muted)]">
         {label}
       </p>
@@ -398,6 +405,57 @@ function Kpi({
         <p className="mt-1 text-xs text-[var(--muted)]/70">{sub}</p>
       )}
     </div>
+  );
+}
+
+function KpiAnimado({
+  label,
+  value,
+  sub,
+  accent = "muted",
+}: {
+  label: string;
+  value: number;
+  sub?: string;
+  accent?: "muted" | "gold" | "success" | "danger" | "warning";
+}) {
+  const colorMap = {
+    muted: "text-foreground",
+    gold: "text-[var(--gold)]",
+    success: "text-[var(--success)]",
+    danger: "text-[var(--danger)]",
+    warning: "text-[var(--warning)]",
+  };
+  return (
+    <div className="rounded-xl border border-[var(--border)] bg-[var(--background-elevated)] p-5 transition-colors hover:border-[var(--gold)]/30">
+      <p className="text-xs uppercase tracking-wide text-[var(--muted)]">
+        {label}
+      </p>
+      <p className={`mt-2 text-2xl font-semibold ${colorMap[accent]}`}>
+        <AnimatedCounter value={value} format={formatBRL} className="font-mono" />
+      </p>
+      {sub && (
+        <p className="mt-1 text-xs text-[var(--muted)]/70">{sub}</p>
+      )}
+    </div>
+  );
+}
+
+function IconMoney() {
+  return (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v10M9 10h5a2 2 0 0 1 0 4h-4a2 2 0 0 0 0 4h5" />
+    </svg>
   );
 }
 
@@ -418,22 +476,6 @@ function StatusBadge({
     cancelada: <Badge variant="neutral">Cancelada</Badge>,
   };
   return map[status];
-}
-
-function EmptyState() {
-  return (
-    <div className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--background-elevated)]/40 p-10 text-center">
-      <p className="text-sm text-[var(--muted)]">
-        Nenhuma cessão cadastrada ainda.
-      </p>
-      <Link
-        href="/dashboard/cessoes/nova"
-        className="mt-3 inline-block text-xs text-[var(--gold)] hover:underline"
-      >
-        Cadastrar a primeira →
-      </Link>
-    </div>
-  );
 }
 
 function SchemaPendente({ erro }: { erro: string }) {

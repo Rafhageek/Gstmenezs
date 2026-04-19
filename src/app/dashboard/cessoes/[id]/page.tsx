@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/feedback";
+import { EmptyState } from "@/components/ui/empty-state";
 import { formatBRL, formatDataBR, formatDocumento } from "@/lib/format";
 import {
   PagarParcelaButton,
@@ -12,6 +13,7 @@ import {
 } from "./parcela-actions";
 import { CancelarCessaoButton } from "./cancelar-cessao-button";
 import { CessaoTimeline } from "./cessao-timeline";
+import { CelebracaoQuitacao } from "./celebracao-quitacao";
 import type {
   CessaoCredito,
   ClientePrincipal,
@@ -70,14 +72,19 @@ export default async function CessaoDetalhesPage({ params }: Props) {
       : 0;
 
   return (
-    <div>
+    <div className="animate-fade-in-up">
+      <CelebracaoQuitacao
+        cessaoId={cessao.id}
+        quitada={cessao.status === "quitada"}
+        numeroContrato={cessao.numero_contrato}
+      />
       <PageHeader
         eyebrow="Cessão de crédito"
         titulo={`Contrato ${cessao.numero_contrato}`}
         descricao={`${cessao.cliente_principal.nome} → ${cessao.cessionario.nome}`}
       />
 
-      <div className="-mt-6 mb-8 flex flex-wrap gap-3">
+      <div className="-mt-6 mb-8 flex flex-wrap gap-3" data-no-print>
         <Link
           href={`/dashboard/cessoes/${cessao.id}/editar`}
           className="inline-flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--background-elevated)] px-4 py-2 text-xs font-semibold text-foreground transition-colors hover:border-[var(--gold)]"
@@ -143,6 +150,9 @@ export default async function CessaoDetalhesPage({ params }: Props) {
           </h2>
         </div>
 
+        {parcelas.length === 0 ? (
+          <EmptyState tipo="parcelas" compact />
+        ) : (
         <div className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--background-elevated)]">
           <table className="w-full text-sm">
             <thead className="bg-black/30 text-left text-xs uppercase tracking-wide text-[var(--muted)]">
@@ -203,6 +213,7 @@ export default async function CessaoDetalhesPage({ params }: Props) {
             </tbody>
           </table>
         </div>
+        )}
       </section>
 
       {timeline && timeline.length > 0 && (

@@ -13,6 +13,7 @@ export interface CessaoFormState {
 const initial: CessaoFormState = { error: null, fieldErrors: {} };
 
 function getDados(formData: FormData) {
+  const percentual = formData.get("percentual_cedido");
   return {
     numero_contrato: String(formData.get("numero_contrato") ?? ""),
     cliente_principal_id: String(formData.get("cliente_principal_id") ?? ""),
@@ -24,6 +25,7 @@ function getDados(formData: FormData) {
       formData.get("data_vencimento_inicial") ?? "",
     ),
     taxa_juros: String(formData.get("taxa_juros") ?? "0"),
+    percentual_cedido: percentual ? String(percentual) : null,
     observacoes: String(formData.get("observacoes") ?? ""),
   };
 }
@@ -75,12 +77,18 @@ export async function atualizarCessao(
   if (!parsed.success) return toFieldErrors(parsed.error);
 
   // Não atualiza valor_total/parcelas_total para não bagunçar parcelas geradas.
-  const { numero_contrato, observacoes, taxa_juros } = parsed.data;
+  const { numero_contrato, observacoes, taxa_juros, percentual_cedido } =
+    parsed.data;
 
   const supabase = await createClient();
   const { error } = await supabase
     .from("cessoes_credito")
-    .update({ numero_contrato, observacoes, taxa_juros })
+    .update({
+      numero_contrato,
+      observacoes,
+      taxa_juros,
+      percentual_cedido,
+    })
     .eq("id", id);
 
   if (error) return { ...initial, error: error.message };

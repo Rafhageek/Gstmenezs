@@ -83,6 +83,8 @@ export interface CessaoCredito {
   data_vencimento_inicial: string;
   status: CessaoStatus;
   taxa_juros: number | null;
+  /** Percentual do crédito cedido (0-100). */
+  percentual_cedido: number | null;
   observacoes: string | null;
   documento_url: string | null;
   created_by: string;

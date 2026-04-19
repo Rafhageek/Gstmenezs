@@ -9,6 +9,7 @@ import {
   registrarPagamento,
   estornarPagamento,
   getComprovanteUrl,
+  atualizarParcela,
 } from "@/app/dashboard/pagamentos/actions";
 import { hojeISO, formatBRL } from "@/lib/format";
 
@@ -190,6 +191,107 @@ export function EstornarButton({ pagamentoId }: { pagamentoId: string }) {
       <div className="flex items-center gap-2 pt-2">
         <Button type="submit" variant="danger" size="sm" disabled={pending}>
           {pending ? "Estornando..." : "Confirmar estorno"}
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => setOpen(false)}
+          disabled={pending}
+        >
+          Cancelar
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+interface EditarParcelaProps {
+  pagamentoId: string;
+  valor: number;
+  dataVencimento: string;
+  observacoes: string | null;
+}
+
+export function EditarParcelaButton({
+  pagamentoId,
+  valor,
+  dataVencimento,
+  observacoes,
+}: EditarParcelaProps) {
+  const [open, setOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  function onSubmit(formData: FormData) {
+    setError(null);
+    startTransition(async () => {
+      const res = await atualizarParcela(formData);
+      if (res.error) {
+        setError(res.error);
+        toast.error("Erro ao atualizar", { description: res.error });
+      } else {
+        setOpen(false);
+        toast.success("Parcela atualizada");
+      }
+    });
+  }
+
+  if (!open) {
+    return (
+      <Button variant="secondary" size="sm" onClick={() => setOpen(true)}>
+        ✏ Editar
+      </Button>
+    );
+  }
+
+  return (
+    <form
+      action={onSubmit}
+      className="rounded-lg border border-[var(--border)] bg-[var(--background-elevated)] p-4 space-y-3"
+    >
+      <input type="hidden" name="pagamento_id" value={pagamentoId} />
+      <p className="text-xs uppercase tracking-wide text-[var(--gold)]">
+        Editar parcela
+      </p>
+      <p className="text-xs text-[var(--muted)]">
+        Altera valor e vencimento. Só funciona para parcelas <strong>não pagas</strong>.
+      </p>
+
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <Field label="Novo valor" required>
+          <Input
+            name="valor"
+            type="number"
+            step="0.01"
+            min="0.01"
+            defaultValue={valor}
+            required
+          />
+        </Field>
+        <Field label="Novo vencimento" required>
+          <Input
+            name="data_vencimento"
+            type="date"
+            defaultValue={dataVencimento}
+            required
+          />
+        </Field>
+      </div>
+
+      <Field label="Observações">
+        <Textarea
+          name="observacoes"
+          rows={2}
+          defaultValue={observacoes ?? ""}
+        />
+      </Field>
+
+      {error && <Alert variant="danger">{error}</Alert>}
+
+      <div className="flex items-center gap-2 pt-2">
+        <Button type="submit" size="sm" disabled={pending}>
+          {pending ? "Salvando..." : "Salvar alterações"}
         </Button>
         <Button
           type="button"

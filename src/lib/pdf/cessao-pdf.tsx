@@ -126,6 +126,14 @@ export function CessaoPDF({
                 label="Quantidade de parcelas"
                 value={String(cessao.parcelas_total)}
               />
+              <PdfInfo
+                label="Percentual cedido"
+                value={
+                  cessao.percentual_cedido != null
+                    ? `${Number(cessao.percentual_cedido).toFixed(2)}%`
+                    : ""
+                }
+              />
             </View>
             <View style={pdfStyles.infoCol}>
               <PdfInfo label="Status" value={traduzirStatus(cessao.status)} />

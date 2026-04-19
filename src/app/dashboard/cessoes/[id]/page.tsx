@@ -8,6 +8,7 @@ import {
   PagarParcelaButton,
   EstornarButton,
   VerComprovanteLink,
+  EditarParcelaButton,
 } from "./parcela-actions";
 import { CancelarCessaoButton } from "./cancelar-cessao-button";
 import { CessaoTimeline } from "./cessao-timeline";
@@ -103,7 +104,21 @@ export default async function CessaoDetalhesPage({ params }: Props) {
         <Kpi label="Valor total" value={formatBRL(cessao.valor_total)} />
         <Kpi label="Pago" value={formatBRL(cessao.valor_pago)} accent="success" />
         <Kpi label="Saldo devedor" value={formatBRL(saldo)} accent="gold" />
-        <Kpi label="% Pago" value={`${pct.toFixed(1)}%`} />
+        <Kpi
+          label={
+            cessao.percentual_cedido != null ? "% Cedido" : "% Pago"
+          }
+          value={
+            cessao.percentual_cedido != null
+              ? `${Number(cessao.percentual_cedido).toFixed(2)}%`
+              : `${pct.toFixed(1)}%`
+          }
+          sub={
+            cessao.percentual_cedido != null
+              ? `Pago: ${pct.toFixed(1)}%`
+              : undefined
+          }
+        />
       </section>
 
       <section className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -205,10 +220,12 @@ export default async function CessaoDetalhesPage({ params }: Props) {
 function Kpi({
   label,
   value,
+  sub,
   accent = "muted",
 }: {
   label: string;
   value: string;
+  sub?: string;
   accent?: "muted" | "gold" | "success" | "danger";
 }) {
   const colorMap = {
@@ -225,6 +242,9 @@ function Kpi({
       <p className={`mt-2 text-2xl font-semibold ${colorMap[accent]}`}>
         {value}
       </p>
+      {sub && (
+        <p className="mt-1 text-xs text-[var(--muted)]/70">{sub}</p>
+      )}
     </div>
   );
 }
@@ -275,11 +295,19 @@ function ParcelaAcao({ parcela }: { parcela: Pagamento }) {
   }
   if (!parcela.data_pagamento) {
     return (
-      <PagarParcelaButton
-        pagamentoId={parcela.id}
-        valorSugerido={Number(parcela.valor)}
-        valorOriginal={Number(parcela.valor_original)}
-      />
+      <div className="flex flex-col items-start gap-2">
+        <PagarParcelaButton
+          pagamentoId={parcela.id}
+          valorSugerido={Number(parcela.valor)}
+          valorOriginal={Number(parcela.valor_original)}
+        />
+        <EditarParcelaButton
+          pagamentoId={parcela.id}
+          valor={Number(parcela.valor)}
+          dataVencimento={parcela.data_vencimento}
+          observacoes={parcela.observacoes}
+        />
+      </div>
     );
   }
   return <EstornarButton pagamentoId={parcela.id} />;

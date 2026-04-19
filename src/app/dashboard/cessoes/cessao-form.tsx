@@ -46,6 +46,15 @@ export function CessaoForm({ cessao, clientes, cessionarios }: Props) {
         </Alert>
       )}
 
+      {!isEdit && (
+        <Alert variant="info">
+          O sistema gera as parcelas com <strong>valores iguais</strong>. Se
+          você precisa de <strong>parcelas variáveis</strong>, crie a cessão
+          normalmente e depois edite o valor/vencimento de cada parcela pelo
+          botão <span className="font-mono">✏ Editar</span> na tabela.
+        </Alert>
+      )}
+
       <section className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <Field
           label="Número do contrato"
@@ -67,6 +76,22 @@ export function CessaoForm({ cessao, clientes, cessionarios }: Props) {
             step="0.01"
             min="0"
             defaultValue={cessao?.taxa_juros ?? 0}
+          />
+        </Field>
+
+        <Field
+          label="Percentual cedido (%)"
+          error={e.percentual_cedido}
+          hint="Percentual do crédito cedido ao cessionário (0-100)"
+        >
+          <Input
+            name="percentual_cedido"
+            type="number"
+            step="0.01"
+            min="0"
+            max="100"
+            defaultValue={cessao?.percentual_cedido ?? ""}
+            placeholder="Ex.: 40"
           />
         </Field>
 

@@ -28,6 +28,12 @@ export const cessaoSchema = z
       .max(50, "Taxa muito alta")
       .optional()
       .default(0),
+    percentual_cedido: z.coerce
+      .number()
+      .min(0, "Percentual inválido")
+      .max(100, "Máximo 100%")
+      .optional()
+      .nullable(),
     observacoes: z.string().trim().optional().or(z.literal("")),
   })
   .refine(

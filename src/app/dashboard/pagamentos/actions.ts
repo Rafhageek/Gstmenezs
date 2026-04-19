@@ -110,3 +110,31 @@ export async function getComprovanteUrl(path: string): Promise<string | null> {
   if (error) return null;
   return data.signedUrl;
 }
+
+export async function atualizarParcela(
+  formData: FormData,
+): Promise<PagamentoActionResult> {
+  const pagamento_id = String(formData.get("pagamento_id") ?? "");
+  const valor = Number(formData.get("valor") ?? 0);
+  const data_vencimento = String(formData.get("data_vencimento") ?? "");
+  const observacoes = String(formData.get("observacoes") ?? "");
+
+  if (!pagamento_id || valor <= 0 || !/^\d{4}-\d{2}-\d{2}$/.test(data_vencimento)) {
+    return { error: "Preencha valor e vencimento corretamente." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("atualizar_parcela", {
+    p_pagamento_id: pagamento_id,
+    p_valor: valor,
+    p_data_vencimento: data_vencimento,
+    p_observacoes: observacoes || null,
+  });
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/cessoes", "layout");
+  revalidatePath("/dashboard/pagamentos");
+  return { error: null, ok: true };
+}

@@ -45,3 +45,5 @@ next-env.d.ts
 # Claude Code / oh-my-claudecode (ambiente de dev local)
 .claude/
 .omc/
+
+.vercel

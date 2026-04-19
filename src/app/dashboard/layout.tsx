@@ -5,6 +5,9 @@ import { MobileNav } from "@/components/mobile-nav";
 import { BrandLogo } from "@/components/brand-logo";
 import { NotificationsBell } from "@/components/notifications-bell";
 import { CommandPalette } from "@/components/command-palette";
+import { NavLink } from "@/components/nav-link";
+import { NavDropdown } from "@/components/nav-dropdown";
+import { UserMenu } from "@/components/user-menu";
 import type {
   Profile,
   ParcelaProxima,
@@ -47,9 +50,9 @@ export default async function DashboardLayout({
 
   const nomeExibicao =
     profile?.nome ?? user.email?.split("@")[0] ?? "Usuário";
-  const roleLabel = roleToLabel(profile?.role);
 
-  const navItems = [
+  // Menu mobile mantém lista flat (drawer lateral)
+  const navItemsMobile = [
     { href: "/dashboard", label: "Visão geral" },
     { href: "/dashboard/clientes", label: "Clientes" },
     { href: "/dashboard/cessionarios", label: "Cessionários" },
@@ -59,18 +62,31 @@ export default async function DashboardLayout({
     { href: "/dashboard/relatorios", label: "Relatórios" },
     { href: "/dashboard/perfil/biometria", label: "Biometria" },
     ...(profile?.role === "admin"
-      ? [{ href: "/dashboard/admin/usuarios", label: "Admin" }]
+      ? [
+          { href: "/dashboard/admin/usuarios", label: "Admin · Usuários" },
+          { href: "/dashboard/admin/portal", label: "Admin · Portal" },
+          { href: "/dashboard/admin/importar", label: "Admin · Importar" },
+          { href: "/dashboard/admin/logs", label: "Admin · Logs" },
+          {
+            href: "/dashboard/admin/configuracoes",
+            label: "Admin · Configurações",
+          },
+        ]
       : []),
   ];
 
   return (
     <div className="flex min-h-full flex-col">
-      <header className="sticky top-0 z-30 border-b border-[var(--border)] bg-[var(--background-elevated)]">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 md:px-6">
-          <Link href="/dashboard" className="flex items-center gap-3">
-            <BrandLogo size={32} />
+      <header className="sticky top-0 z-30 border-b border-[var(--border)] bg-[var(--background-elevated)]/95 backdrop-blur-md">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 md:px-6">
+          {/* Branding */}
+          <Link
+            href="/dashboard"
+            className="flex shrink-0 items-center gap-3"
+          >
+            <BrandLogo size={34} />
             <div className="leading-tight">
-              <p className="text-[10px] uppercase tracking-[0.2em] text-[var(--muted)]">
+              <p className="text-[9px] uppercase tracking-[0.2em] text-[var(--muted)]">
                 Menezes Advocacia
               </p>
               <p className="text-sm font-semibold tracking-tight">
@@ -79,35 +95,67 @@ export default async function DashboardLayout({
             </div>
           </Link>
 
-          <nav className="hidden items-center gap-6 text-sm text-[var(--muted)] md:flex">
-            {navItems.map((item) => (
-              <NavLink key={item.href} href={item.href}>
-                {item.label}
-              </NavLink>
-            ))}
+          {/* Menu principal — somente desktop */}
+          <nav className="hidden flex-1 items-center justify-center gap-7 md:flex">
+            <NavLink href="/dashboard" exact>
+              Visão geral
+            </NavLink>
+
+            <NavDropdown
+              label="Cadastros"
+              items={[
+                {
+                  href: "/dashboard/clientes",
+                  label: "Clientes",
+                  descricao: "Cedentes do crédito",
+                },
+                {
+                  href: "/dashboard/cessionarios",
+                  label: "Cessionários",
+                  descricao: "Recebedores das cessões",
+                },
+              ]}
+            />
+
+            <NavDropdown
+              label="Operação"
+              items={[
+                {
+                  href: "/dashboard/cessoes",
+                  label: "Cessões",
+                  descricao: "Contratos de cessão de crédito",
+                },
+                {
+                  href: "/dashboard/pagamentos",
+                  label: "Pagamentos",
+                  descricao: "Parcelas e comprovantes",
+                },
+                {
+                  href: "/dashboard/agenda",
+                  label: "Agenda",
+                  descricao: "Vencimentos do mês",
+                },
+              ]}
+            />
+
+            <NavLink href="/dashboard/relatorios">Relatórios</NavLink>
           </nav>
 
-          <div className="flex items-center gap-3">
+          {/* Ações à direita */}
+          <div className="flex shrink-0 items-center gap-2">
             <CommandPalette />
             <NotificationsBell
               proximas={proximas}
               atrasadas={atrasadas}
             />
-            <div className="hidden text-right md:block">
-              <p className="text-sm font-medium">{nomeExibicao}</p>
-              <p className="text-[10px] uppercase tracking-wide text-[var(--gold)]">
-                {roleLabel}
-              </p>
+            <div className="hidden md:block">
+              <UserMenu
+                nome={nomeExibicao}
+                email={profile?.email ?? user.email ?? ""}
+                role={profile?.role}
+              />
             </div>
-            <form action="/auth/sign-out" method="post">
-              <button
-                type="submit"
-                className="hidden rounded-md border border-[var(--border)] px-3 py-1.5 text-xs font-medium text-[var(--muted)] transition-colors hover:border-[var(--gold)] hover:text-foreground md:inline-flex"
-              >
-                Sair
-              </button>
-            </form>
-            <MobileNav items={navItems} />
+            <MobileNav items={navItemsMobile} />
           </div>
         </div>
       </header>
@@ -117,34 +165,4 @@ export default async function DashboardLayout({
       </main>
     </div>
   );
-}
-
-function NavLink({
-  href,
-  children,
-}: {
-  href: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <Link
-      href={href}
-      className="transition-colors hover:text-foreground"
-    >
-      {children}
-    </Link>
-  );
-}
-
-function roleToLabel(role: Profile["role"] | undefined): string {
-  switch (role) {
-    case "admin":
-      return "Administrador";
-    case "financeiro":
-      return "Financeiro";
-    case "contador":
-      return "Contador";
-    default:
-      return "Usuário";
-  }
 }

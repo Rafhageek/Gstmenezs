@@ -134,12 +134,13 @@ with base as (
     and p.data_pagamento >= date_trunc('month', current_date) - interval '1 month'
 )
 select
-  coalesce(sum(valor) filter (
-    where mes = date_trunc('month', current_date)::date
+  coalesce(sum(base.valor) filter (
+    where base.mes = date_trunc('month', current_date)::date
   ), 0) as mes_atual,
-  coalesce(sum(valor) filter (
-    where mes = date_trunc('month', current_date - interval '1 month')::date
-  ), 0) as mes_anterior;
+  coalesce(sum(base.valor) filter (
+    where base.mes = date_trunc('month', current_date - interval '1 month')::date
+  ), 0) as mes_anterior
+from base;
 
 comment on view public.v_comparativo_mes is
   'Recebido no mes atual vs mes anterior';

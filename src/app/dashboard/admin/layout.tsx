@@ -30,6 +30,7 @@ export default async function AdminLayout({
       <nav className="mb-6 flex flex-wrap gap-2">
         <AdminTab href="/dashboard/admin/usuarios">Usuários</AdminTab>
         <AdminTab href="/dashboard/admin/portal">Portal do contador</AdminTab>
+        <AdminTab href="/dashboard/admin/importar">Importar CSV</AdminTab>
         <AdminTab href="/dashboard/admin/logs">Logs de auditoria</AdminTab>
         <AdminTab href="/dashboard/admin/configuracoes">Configurações</AdminTab>
       </nav>

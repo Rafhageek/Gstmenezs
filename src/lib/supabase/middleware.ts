@@ -35,7 +35,9 @@ export async function updateSession(request: NextRequest) {
   // Ajuste a lista conforme expandirmos as áreas privadas.
   const path = request.nextUrl.pathname;
   const isAuthRoute =
-    path.startsWith("/login") || path.startsWith("/auth");
+    path.startsWith("/login") ||
+    path.startsWith("/auth") ||
+    path.startsWith("/recuperar-senha");
 
   // Portal do contador: acesso via token na URL, sem login.
   const isPortalRoute =

@@ -3,7 +3,13 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { MobileNav } from "@/components/mobile-nav";
 import { BrandLogo } from "@/components/brand-logo";
-import type { Profile } from "@/types/database";
+import { NotificationsBell } from "@/components/notifications-bell";
+import { CommandPalette } from "@/components/command-palette";
+import type {
+  Profile,
+  ParcelaProxima,
+  InadimplenciaItem,
+} from "@/types/database";
 
 export default async function DashboardLayout({
   children,
@@ -19,11 +25,25 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("nome, email, role")
-    .eq("id", user.id)
-    .single<Pick<Profile, "nome" | "email" | "role">>();
+  const [{ data: profile }, { data: proximasRaw }, { data: atrasadasRaw }] =
+    await Promise.all([
+      supabase
+        .from("profiles")
+        .select("nome, email, role")
+        .eq("id", user.id)
+        .single<Pick<Profile, "nome" | "email" | "role">>(),
+      supabase
+        .from("v_parcelas_proximas")
+        .select("*")
+        .returns<ParcelaProxima[]>(),
+      supabase
+        .from("v_inadimplencia")
+        .select("*")
+        .returns<InadimplenciaItem[]>(),
+    ]);
+
+  const proximas = proximasRaw ?? [];
+  const atrasadas = atrasadasRaw ?? [];
 
   const nomeExibicao =
     profile?.nome ?? user.email?.split("@")[0] ?? "Usuário";
@@ -67,6 +87,11 @@ export default async function DashboardLayout({
           </nav>
 
           <div className="flex items-center gap-3">
+            <CommandPalette />
+            <NotificationsBell
+              proximas={proximas}
+              atrasadas={atrasadas}
+            />
             <div className="hidden text-right md:block">
               <p className="text-sm font-medium">{nomeExibicao}</p>
               <p className="text-[10px] uppercase tracking-wide text-[var(--gold)]">

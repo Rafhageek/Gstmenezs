@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/feedback";
 import { FluxoMensalChart } from "@/components/charts/fluxo-mensal-chart";
 import { CessoesPizzaChart } from "@/components/charts/cessoes-pizza-chart";
 import { CessaoProgressoPizza } from "@/components/charts/cessao-progresso-pizza";
+import { AgingBuckets } from "@/components/dashboard/aging-buckets";
 import {
   formatBRL,
   formatDataBR,
@@ -13,6 +14,9 @@ import type {
   CessaoResumo,
   FluxoMensal,
   InadimplenciaItem,
+  AgingBucket,
+  DSO,
+  ComparativoMes,
 } from "@/types/database";
 
 export const metadata = {
@@ -22,18 +26,25 @@ export const metadata = {
 export default async function DashboardPage() {
   const supabase = await createClient();
 
-  const [cessoesRes, fluxoRes, inadRes] = await Promise.all([
-    supabase
-      .from("v_cessoes_resumo")
-      .select("*")
-      .order("data_vencimento_inicial", { ascending: true })
-      .returns<CessaoResumo[]>(),
-    supabase.from("v_fluxo_mensal").select("*").returns<FluxoMensal[]>(),
-    supabase
-      .from("v_inadimplencia")
-      .select("*")
-      .returns<InadimplenciaItem[]>(),
-  ]);
+  const [cessoesRes, fluxoRes, inadRes, agingRes, dsoRes, compRes] =
+    await Promise.all([
+      supabase
+        .from("v_cessoes_resumo")
+        .select("*")
+        .order("data_vencimento_inicial", { ascending: true })
+        .returns<CessaoResumo[]>(),
+      supabase.from("v_fluxo_mensal").select("*").returns<FluxoMensal[]>(),
+      supabase
+        .from("v_inadimplencia")
+        .select("*")
+        .returns<InadimplenciaItem[]>(),
+      supabase.from("v_aging_buckets").select("*").returns<AgingBucket[]>(),
+      supabase.from("v_dso").select("*").maybeSingle<DSO>(),
+      supabase
+        .from("v_comparativo_mes")
+        .select("*")
+        .maybeSingle<ComparativoMes>(),
+    ]);
 
   if (cessoesRes.error) {
     return <SchemaPendente erro={cessoesRes.error.message} />;
@@ -42,6 +53,16 @@ export default async function DashboardPage() {
   const cessoes = cessoesRes.data ?? [];
   const fluxo = fluxoRes.data ?? [];
   const inadimplentes = inadRes.data ?? [];
+  const aging = agingRes.data ?? [];
+  const dso = dsoRes.data;
+  const comparativo = compRes.data;
+
+  const variacao =
+    comparativo && comparativo.mes_anterior > 0
+      ? ((comparativo.mes_atual - comparativo.mes_anterior) /
+          comparativo.mes_anterior) *
+        100
+      : null;
 
   const totais = cessoes.reduce(
     (acc, c) => {
@@ -82,7 +103,7 @@ export default async function DashboardPage() {
         </p>
       </header>
 
-      {/* KPIs */}
+      {/* KPIs linha 1 */}
       <section className="grid grid-cols-1 gap-4 md:grid-cols-4">
         <Kpi label="Volume total" value={formatBRL(totais.total)} />
         <Kpi
@@ -103,11 +124,72 @@ export default async function DashboardPage() {
         />
       </section>
 
-      {/* Gráficos */}
+      {/* KPIs linha 2: DSO + comparativo */}
+      <section className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
+        <Kpi
+          label="DSO (prazo médio)"
+          value={
+            dso && dso.parcelas_consideradas > 0
+              ? `${dso.dso_dias} ${dso.dso_dias === 1 ? "dia" : "dias"}`
+              : "—"
+          }
+          sub={
+            dso && dso.parcelas_consideradas > 0
+              ? `Média dos últimos 180 dias · ${dso.parcelas_consideradas} pagamentos`
+              : "Sem dados suficientes"
+          }
+          accent={
+            dso && dso.dso_dias > 15
+              ? "warning"
+              : dso && dso.dso_dias > 0
+                ? "success"
+                : "muted"
+          }
+        />
+        <Kpi
+          label="Recebido este mês"
+          value={comparativo ? formatBRL(comparativo.mes_atual) : "—"}
+          sub={
+            comparativo
+              ? `Mês anterior: ${formatBRL(comparativo.mes_anterior)}`
+              : undefined
+          }
+          accent="success"
+        />
+        <Kpi
+          label="Variação MoM"
+          value={
+            variacao === null
+              ? "—"
+              : `${variacao >= 0 ? "+" : ""}${variacao.toFixed(1)}%`
+          }
+          sub={
+            variacao === null
+              ? "Precisa do mês anterior"
+              : variacao >= 0
+                ? "Crescimento vs mês anterior"
+                : "Queda vs mês anterior"
+          }
+          accent={
+            variacao === null
+              ? "muted"
+              : variacao >= 0
+                ? "success"
+                : "danger"
+          }
+        />
+      </section>
+
+      {/* Aging + gráficos */}
       <section className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <FluxoMensalChart data={fluxo} />
         </div>
+        <AgingBuckets data={aging} />
+      </section>
+
+      {/* Pizza cessões */}
+      <section className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
         <CessoesPizzaChart
           titulo="Maiores cessões"
           subtitulo="Top 6 por volume"
@@ -295,13 +377,14 @@ function Kpi({
   label: string;
   value: string;
   sub?: string;
-  accent?: "muted" | "gold" | "success" | "danger";
+  accent?: "muted" | "gold" | "success" | "danger" | "warning";
 }) {
   const colorMap = {
     muted: "text-foreground",
     gold: "text-[var(--gold)]",
     success: "text-[var(--success)]",
     danger: "text-[var(--danger)]",
+    warning: "text-[var(--warning)]",
   };
   return (
     <div className="rounded-xl border border-[var(--border)] bg-[var(--background-elevated)] p-5">

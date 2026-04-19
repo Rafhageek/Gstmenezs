@@ -83,15 +83,23 @@ function SignInForm() {
         <PasswordInput required />
       </Field>
 
-      <label className="flex cursor-pointer items-center gap-2 text-xs text-[var(--muted)] select-none">
-        <input
-          type="checkbox"
-          checked={lembrar}
-          onChange={(e) => setLembrar(e.target.checked)}
-          className="h-4 w-4 cursor-pointer rounded border-[var(--border)] bg-black/30 text-[var(--gold)] focus:ring-[var(--gold)]"
-        />
-        Lembrar meu e-mail neste dispositivo
-      </label>
+      <div className="flex items-center justify-between text-xs">
+        <label className="flex cursor-pointer items-center gap-2 text-[var(--muted)] select-none">
+          <input
+            type="checkbox"
+            checked={lembrar}
+            onChange={(e) => setLembrar(e.target.checked)}
+            className="h-4 w-4 cursor-pointer rounded border-[var(--border)] bg-black/30 text-[var(--gold)] focus:ring-[var(--gold)]"
+          />
+          Lembrar meu e-mail
+        </label>
+        <a
+          href="/recuperar-senha"
+          className="text-[var(--gold)] hover:underline"
+        >
+          Esqueci a senha
+        </a>
+      </div>
 
       {state.error && <ErrorAlert message={state.error} />}
 

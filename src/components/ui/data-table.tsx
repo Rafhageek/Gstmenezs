@@ -1,5 +1,6 @@
 interface DataTableProps {
-  headers: string[];
+  /** Cada item pode ser string simples ou ReactNode (ex.: SortableHeader). */
+  headers: React.ReactNode[];
   rows: React.ReactNode[][];
   empty?: React.ReactNode;
 }
@@ -22,8 +23,8 @@ export function DataTable({ headers, rows, empty }: DataTableProps) {
       <table className="w-full text-sm">
         <thead className="bg-black/30 text-left text-xs uppercase tracking-wide text-[var(--muted)]">
           <tr>
-            {headers.map((h) => (
-              <th key={h} className="px-4 py-3 font-medium">
+            {headers.map((h, i) => (
+              <th key={i} className="px-4 py-3 font-medium">
                 {h}
               </th>
             ))}

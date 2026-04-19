@@ -4,6 +4,8 @@ import { PageHeader } from "@/components/ui/page-header";
 import { DataTable } from "@/components/ui/data-table";
 import { Badge } from "@/components/ui/feedback";
 import { SearchInput } from "@/components/ui/search-input";
+import { SortableHeader } from "@/components/ui/sortable-header";
+import { Pagination } from "@/components/ui/pagination";
 import { formatBRL, formatDataBR } from "@/lib/format";
 import type { CessaoResumo } from "@/types/database";
 
@@ -11,9 +13,22 @@ export const metadata = {
   title: "Cessões — Painel MNZ",
 };
 
+const PAGE_SIZE = 20;
+const COLUNAS_ORDENAVEIS = [
+  "numero_contrato",
+  "cliente_nome",
+  "valor_total",
+  "valor_pago",
+  "data_vencimento_inicial",
+  "status",
+] as const;
+
 interface SearchParams {
   q?: string;
   status?: string;
+  sort?: string;
+  dir?: string;
+  page?: string;
 }
 
 export default async function CessoesPage({
@@ -21,24 +36,35 @@ export default async function CessoesPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  const { q, status } = await searchParams;
+  const sp = await searchParams;
+  const sort = COLUNAS_ORDENAVEIS.includes(
+    sp.sort as (typeof COLUNAS_ORDENAVEIS)[number],
+  )
+    ? (sp.sort as string)
+    : "data_vencimento_inicial";
+  const ascending = (sp.dir ?? "asc") !== "desc";
+  const page = Math.max(1, Number(sp.page) || 1);
+  const offset = (page - 1) * PAGE_SIZE;
+
   const supabase = await createClient();
 
   let query = supabase
     .from("v_cessoes_resumo")
-    .select("*")
-    .order("data_vencimento_inicial", { ascending: true });
+    .select("*", { count: "exact" })
+    .order(sort, { ascending });
 
-  if (q) {
+  if (sp.q) {
     query = query.or(
-      `numero_contrato.ilike.%${q}%,cliente_nome.ilike.%${q}%,cessionario_nome.ilike.%${q}%`,
+      `numero_contrato.ilike.%${sp.q}%,cliente_nome.ilike.%${sp.q}%,cessionario_nome.ilike.%${sp.q}%`,
     );
   }
-  if (status && status !== "todos") {
-    query = query.eq("status", status);
+  if (sp.status && sp.status !== "todos") {
+    query = query.eq("status", sp.status);
   }
 
-  const { data, error } = await query.returns<CessaoResumo[]>();
+  const { data, count, error } = await query
+    .range(offset, offset + PAGE_SIZE - 1)
+    .returns<CessaoResumo[]>();
 
   if (error) {
     return (
@@ -50,6 +76,13 @@ export default async function CessoesPage({
   }
 
   const cessoes = data ?? [];
+  const total = count ?? 0;
+
+  const baseQuery = new URLSearchParams();
+  if (sp.q) baseQuery.set("q", sp.q);
+  if (sp.status) baseQuery.set("status", sp.status);
+  if (sp.sort) baseQuery.set("sort", sp.sort);
+  if (sp.dir) baseQuery.set("dir", sp.dir);
 
   return (
     <div>
@@ -63,7 +96,7 @@ export default async function CessoesPage({
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <SearchInput placeholder="Buscar por contrato, cliente ou cessionário..." />
         <a
-          href={`/api/exportar/cessoes${q ? `?q=${encodeURIComponent(q)}` : ""}`}
+          href={`/api/exportar/cessoes${sp.q ? `?q=${encodeURIComponent(sp.q)}` : ""}`}
           className="rounded-lg border border-[var(--border)] bg-[var(--background-elevated)] px-3 py-2 text-xs font-semibold text-foreground transition-colors hover:border-[var(--gold)]"
           download
         >
@@ -72,22 +105,63 @@ export default async function CessoesPage({
       </div>
 
       <nav className="mb-4 flex flex-wrap gap-2">
-        <FilterTab label="Todas" value="todos" current={status ?? "todos"} q={q} />
-        <FilterTab label="Ativas" value="ativa" current={status ?? "todos"} q={q} />
-        <FilterTab label="Quitadas" value="quitada" current={status ?? "todos"} q={q} />
-        <FilterTab label="Inadimplentes" value="inadimplente" current={status ?? "todos"} q={q} />
-        <FilterTab label="Canceladas" value="cancelada" current={status ?? "todos"} q={q} />
+        <FilterTab
+          label="Todas"
+          value="todos"
+          current={sp.status ?? "todos"}
+          q={sp.q}
+        />
+        <FilterTab
+          label="Ativas"
+          value="ativa"
+          current={sp.status ?? "todos"}
+          q={sp.q}
+        />
+        <FilterTab
+          label="Quitadas"
+          value="quitada"
+          current={sp.status ?? "todos"}
+          q={sp.q}
+        />
+        <FilterTab
+          label="Inadimplentes"
+          value="inadimplente"
+          current={sp.status ?? "todos"}
+          q={sp.q}
+        />
+        <FilterTab
+          label="Canceladas"
+          value="cancelada"
+          current={sp.status ?? "todos"}
+          q={sp.q}
+        />
       </nav>
 
       <DataTable
         headers={[
-          "Contrato",
-          "Cliente / Cessionário",
-          "Valor total",
-          "Pago",
+          <SortableHeader
+            key="c"
+            label="Contrato"
+            column="numero_contrato"
+          />,
+          <SortableHeader
+            key="cl"
+            label="Cliente / Cessionário"
+            column="cliente_nome"
+          />,
+          <SortableHeader
+            key="v"
+            label="Valor total"
+            column="valor_total"
+          />,
+          <SortableHeader key="p" label="Pago" column="valor_pago" />,
           "% Pago",
-          "1º vencimento",
-          "Status",
+          <SortableHeader
+            key="d"
+            label="1º vencimento"
+            column="data_vencimento_inicial"
+          />,
+          <SortableHeader key="s" label="Status" column="status" />,
           "",
         ]}
         rows={cessoes.map((c) => [
@@ -125,6 +199,13 @@ export default async function CessoesPage({
             Detalhes
           </Link>,
         ])}
+      />
+
+      <Pagination
+        total={total}
+        pageSize={PAGE_SIZE}
+        currentPage={page}
+        baseQuery={baseQuery.toString()}
       />
     </div>
   );

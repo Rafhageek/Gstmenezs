@@ -1,0 +1,3 @@
+numero_contrato;cliente_nome;cliente_documento;cessionario_nome;cessionario_documento;valor_total;parcelas_total;data_cessao;data_vencimento_inicial;percentual_cedido;observacoes
+2026/001;Marcos André de Andrade;12345678909;João Silva;98765432100;100000,00;12;15/01/2026;15/02/2026;40;Contrato modelo
+2026/002;Marcos André de Andrade;12345678909;Maria Souza;11122233344;50000,00;6;20/01/2026;20/02/2026;25;

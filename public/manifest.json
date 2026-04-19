@@ -1,0 +1,26 @@
+{
+  "name": "Painel MNZ — Menezes Advocacia",
+  "short_name": "Painel MNZ",
+  "description": "Gestão de recebíveis de cessão de crédito.",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0a1628",
+  "theme_color": "#0a1628",
+  "lang": "pt-BR",
+  "categories": ["business", "finance", "productivity"],
+  "icons": [
+    {
+      "src": "/icon",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/apple-icon",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

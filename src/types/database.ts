@@ -147,6 +147,35 @@ export interface Configuracoes {
   updated_by: string | null;
 }
 
+export interface AgingBucket {
+  bucket: "ate_30" | "de_31_60" | "de_61_90" | "acima_90";
+  valor: number;
+  qtd: number;
+}
+
+export interface ParcelaProxima {
+  pagamento_id: string;
+  cessao_id: string;
+  numero_parcela: number;
+  valor: number;
+  data_vencimento: string;
+  dias_ate_vencer: number;
+  numero_contrato: string;
+  cliente_id: string;
+  cliente_nome: string;
+  cessionario_nome: string;
+}
+
+export interface DSO {
+  dso_dias: number;
+  parcelas_consideradas: number;
+}
+
+export interface ComparativoMes {
+  mes_atual: number;
+  mes_anterior: number;
+}
+
 export interface PortalLink {
   id: string;
   token: string;

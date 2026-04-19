@@ -109,3 +109,78 @@ body {
 .animate-delay-2 { animation-delay: 120ms; }
 .animate-delay-3 { animation-delay: 180ms; }
 .animate-delay-4 { animation-delay: 240ms; }
+
+/* ============================================================
+ * Welcome splash — tela de boas-vindas após login
+ * ============================================================ */
+@keyframes welcome-shine {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes welcome-progress {
+  from { width: 0%; }
+  to { width: 100%; }
+}
+
+@keyframes welcome-particle-up {
+  0% {
+    opacity: 0;
+    transform: translateY(40vh) scale(0.8);
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-10vh) scale(1);
+  }
+}
+
+.welcome-name {
+  background: linear-gradient(
+    90deg,
+    var(--gold) 0%,
+    #f5d87a 25%,
+    var(--gold) 50%,
+    #f5d87a 75%,
+    var(--gold) 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation:
+    fade-in-up 400ms cubic-bezier(0.16, 1, 0.3, 1) 400ms both,
+    welcome-shine 2400ms linear 800ms infinite;
+}
+
+.welcome-progress {
+  width: 0%;
+  animation: welcome-progress 2600ms ease-out 400ms both;
+}
+
+.welcome-particle {
+  position: absolute;
+  bottom: 0;
+  width: 4px;
+  height: 4px;
+  border-radius: 9999px;
+  background: var(--gold);
+  box-shadow: 0 0 12px rgba(201, 169, 97, 0.6);
+  opacity: 0;
+  animation: welcome-particle-up 3200ms ease-out infinite;
+  animation-fill-mode: both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .welcome-name {
+    animation: fade-in-up 200ms ease-out both;
+  }
+  .welcome-progress {
+    animation: welcome-progress 1200ms linear both;
+  }
+  .welcome-particle {
+    display: none;
+  }
+}

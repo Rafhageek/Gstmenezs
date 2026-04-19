@@ -65,7 +65,7 @@ export async function signIn(
   }
 
   revalidatePath("/", "layout");
-  redirect("/dashboard");
+  redirect("/bem-vindo");
 }
 
 export async function signUp(

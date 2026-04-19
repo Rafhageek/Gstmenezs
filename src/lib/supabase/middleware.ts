@@ -48,6 +48,7 @@ export async function updateSession(request: NextRequest) {
   // Rotas que nunca disparam lock biométrico
   const isUnlockRoute =
     path === "/desbloquear" ||
+    path === "/bem-vindo" ||
     path.startsWith("/api/auth/passkey") ||
     path === "/auth/sign-out";
 

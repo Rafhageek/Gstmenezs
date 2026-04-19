@@ -32,22 +32,37 @@ export async function signIn(
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
 
+  console.log(
+    `[signIn] tentativa email=${email} passwordLen=${password.length}`,
+  );
+
   if (!email || !password) {
     return { error: "Informe e-mail e senha." };
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
   });
 
   if (error) {
+    console.log(
+      `[signIn] FALHA email=${email} code=${error.code ?? "?"} status=${error.status ?? "?"} msg="${error.message}"`,
+    );
     return { error: traduzirErroAuth(error.message) };
   }
 
+  console.log(
+    `[signIn] SUCESSO email=${email} userId=${data.user?.id ?? "?"}`,
+  );
+
   // Login fresh com senha concede unlock imediato (12h).
-  await setarUnlockAt();
+  try {
+    await setarUnlockAt();
+  } catch (e) {
+    console.error("[signIn] erro ao setar unlock cookie:", e);
+  }
 
   revalidatePath("/", "layout");
   redirect("/dashboard");

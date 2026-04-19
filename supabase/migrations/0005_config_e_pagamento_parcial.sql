@@ -34,15 +34,18 @@ comment on table public.configuracoes is 'Singleton com dados do escritório usa
 
 alter table public.configuracoes enable row level security;
 
+drop policy if exists "configuracoes: autenticados leem" on public.configuracoes;
 create policy "configuracoes: autenticados leem"
   on public.configuracoes for select
   using (auth.uid() is not null);
 
+drop policy if exists "configuracoes: apenas admin altera" on public.configuracoes;
 create policy "configuracoes: apenas admin altera"
   on public.configuracoes for update
   using (public.current_user_role() = 'admin')
   with check (public.current_user_role() = 'admin');
 
+drop trigger if exists trg_configuracoes_updated_at on public.configuracoes;
 create trigger trg_configuracoes_updated_at
   before update on public.configuracoes
   for each row execute function public.set_updated_at();
@@ -178,8 +181,12 @@ $$;
 -- ------------------------------------------------------------
 -- 4. Atualiza view v_cessoes_resumo: inclui cliente_id (útil p/ filtros)
 -- ------------------------------------------------------------
+-- Drop + create porque a ordem/nomes de colunas mudaram
+-- (CREATE OR REPLACE VIEW não permite alterar assinatura da view)
 
-create or replace view public.v_cessoes_resumo as
+drop view if exists public.v_cessoes_resumo cascade;
+
+create view public.v_cessoes_resumo as
 select
   c.id,
   c.numero_contrato,
@@ -213,7 +220,9 @@ join public.cessionarios ce on ce.id = c.cessionario_id;
 -- 5. View de eventos (timeline) de cada cessão
 -- ------------------------------------------------------------
 
-create or replace view public.v_timeline_cessao as
+drop view if exists public.v_timeline_cessao;
+
+create view public.v_timeline_cessao as
 -- Criação da cessão
 select
   c.id as cessao_id,

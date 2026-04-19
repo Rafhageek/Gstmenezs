@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { BrandLogo } from "@/components/brand-logo";
+import { getConfiguracoes } from "@/lib/configuracoes";
 import { LoginForm } from "./login-form";
 
 export const metadata = {
@@ -17,14 +18,20 @@ export default async function LoginPage() {
     redirect("/dashboard");
   }
 
+  const config = await getConfiguracoes();
+
   return (
-    <main className="flex flex-1 items-center justify-center px-6 py-16">
-      <div className="w-full max-w-md">
-        <div className="mb-8 flex items-center gap-3">
-          <BrandLogo size={40} />
+    <main className="relative flex flex-1 items-center justify-center overflow-hidden px-4 py-10">
+      {/* Background ambiente */}
+      <BackgroundAmbiente />
+
+      {/* Card */}
+      <div className="relative z-10 w-full max-w-md">
+        <div className="animate-fade-in-up animate-delay-1 mb-8 flex items-center gap-3">
+          <BrandLogo size={44} />
           <div>
             <p className="text-xs uppercase tracking-[0.2em] text-[var(--muted)]">
-              Menezes Advocacia
+              {config.razao_social}
             </p>
             <h1 className="text-2xl font-semibold tracking-tight">
               Painel MNZ
@@ -32,7 +39,7 @@ export default async function LoginPage() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--background-elevated)] p-8 shadow-2xl shadow-black/30">
+        <div className="animate-fade-in-up animate-delay-2 rounded-2xl border border-[var(--border)] bg-[var(--background-elevated)]/80 p-8 shadow-2xl shadow-black/40 backdrop-blur-xl">
           <h2 className="text-xl font-semibold tracking-tight">
             Acesso ao sistema
           </h2>
@@ -43,10 +50,43 @@ export default async function LoginPage() {
           <LoginForm />
         </div>
 
-        <p className="mt-6 text-center text-xs text-[var(--muted)]">
+        <p className="animate-fade-in-up animate-delay-3 mt-6 text-center text-xs text-[var(--muted)]">
           Sigilo profissional · Auditoria completa · Conformidade OAB
         </p>
       </div>
     </main>
+  );
+}
+
+/** Ambiente visual: gradientes radiais sutis + grid de pontos. */
+function BackgroundAmbiente() {
+  return (
+    <>
+      {/* Blobs de cor */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background: `
+            radial-gradient(600px circle at 20% 20%, rgba(201, 169, 97, 0.08), transparent 60%),
+            radial-gradient(500px circle at 80% 80%, rgba(30, 58, 95, 0.35), transparent 60%)
+          `,
+        }}
+      />
+      {/* Grid de pontos */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-[0.12]"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle, rgba(201, 169, 97, 0.4) 1px, transparent 1px)",
+          backgroundSize: "28px 28px",
+          maskImage:
+            "radial-gradient(ellipse at center, black 40%, transparent 80%)",
+          WebkitMaskImage:
+            "radial-gradient(ellipse at center, black 40%, transparent 80%)",
+        }}
+      />
+    </>
   );
 }

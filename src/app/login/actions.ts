@@ -2,7 +2,24 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+
+const UNLOCK_COOKIE = "mnz_unlock_at";
+const UNLOCK_DURATION_HOURS = 12;
+
+async function setarUnlockAt() {
+  const cookieStore = await cookies();
+  cookieStore.set({
+    name: UNLOCK_COOKIE,
+    value: String(Date.now()),
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: UNLOCK_DURATION_HOURS * 60 * 60,
+  });
+}
 
 export interface AuthFormState {
   error: string | null;
@@ -28,6 +45,9 @@ export async function signIn(
   if (error) {
     return { error: traduzirErroAuth(error.message) };
   }
+
+  // Login fresh com senha concede unlock imediato (12h).
+  await setarUnlockAt();
 
   revalidatePath("/", "layout");
   redirect("/dashboard");

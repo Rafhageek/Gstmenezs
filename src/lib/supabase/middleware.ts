@@ -45,10 +45,33 @@ export async function updateSession(request: NextRequest) {
 
   const isPublicRoute = path === "/";
 
+  // Rotas que nunca disparam lock biométrico
+  const isUnlockRoute =
+    path === "/desbloquear" ||
+    path.startsWith("/api/auth/passkey") ||
+    path === "/auth/sign-out";
+
   if (!user && !isAuthRoute && !isPublicRoute && !isPortalRoute) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
+  }
+
+  // Lock biométrico: se usuário autenticado acessa área privada sem unlock
+  // válido (12h), redireciona para /desbloquear. A página /desbloquear
+  // verifica se o usuário tem passkey cadastrada — se não tiver, libera.
+  if (user && path.startsWith("/dashboard") && !isUnlockRoute) {
+    const UNLOCK_MS = 12 * 60 * 60 * 1000;
+    const unlockCookie = request.cookies.get("mnz_unlock_at")?.value;
+    const unlockAt = unlockCookie ? Number(unlockCookie) : 0;
+    const precisaDesbloquear = !unlockAt || Date.now() - unlockAt >= UNLOCK_MS;
+
+    if (precisaDesbloquear) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/desbloquear";
+      url.searchParams.set("next", path + request.nextUrl.search);
+      return NextResponse.redirect(url);
+    }
   }
 
   return supabaseResponse;

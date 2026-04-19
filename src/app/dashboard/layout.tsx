@@ -57,6 +57,7 @@ export default async function DashboardLayout({
     { href: "/dashboard/pagamentos", label: "Pagamentos" },
     { href: "/dashboard/agenda", label: "Agenda" },
     { href: "/dashboard/relatorios", label: "Relatórios" },
+    { href: "/dashboard/perfil/biometria", label: "Biometria" },
     ...(profile?.role === "admin"
       ? [{ href: "/dashboard/admin/usuarios", label: "Admin" }]
       : []),

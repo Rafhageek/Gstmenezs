@@ -147,6 +147,21 @@ export interface Configuracoes {
   updated_by: string | null;
 }
 
+export interface Passkey {
+  id: string;
+  user_id: string;
+  credential_id: string;
+  public_key: string;
+  counter: number;
+  device_type: string | null;
+  backed_up: boolean;
+  transports: string[] | null;
+  nome_dispositivo: string;
+  aaguid: string | null;
+  created_at: string;
+  ultimo_uso_em: string | null;
+}
+
 export interface AgingBucket {
   bucket: "ate_30" | "de_31_60" | "de_61_90" | "acima_90";
   valor: number;

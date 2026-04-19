@@ -147,6 +147,32 @@ export interface Configuracoes {
   updated_by: string | null;
 }
 
+export interface PortalLink {
+  id: string;
+  token: string;
+  cliente_id: string;
+  descricao: string;
+  expires_at: string | null;
+  revogado_em: string | null;
+  created_by: string;
+  created_at: string;
+  ultimo_acesso_em: string | null;
+  acessos_total: number;
+}
+
+export interface PortalLinkView extends PortalLink {
+  cliente_nome: string;
+  criado_por_nome: string | null;
+  status: "ativo" | "expirado" | "revogado";
+}
+
+export interface PortalContexto {
+  cliente_id: string;
+  cliente_nome: string;
+  descricao: string;
+  expires_at: string | null;
+}
+
 export interface TimelineEvento {
   cessao_id: string;
   evento_em: string;

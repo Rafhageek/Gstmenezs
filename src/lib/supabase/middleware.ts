@@ -33,13 +33,17 @@ export async function updateSession(request: NextRequest) {
 
   // Rotas protegidas: redireciona para /login se não autenticado.
   // Ajuste a lista conforme expandirmos as áreas privadas.
+  const path = request.nextUrl.pathname;
   const isAuthRoute =
-    request.nextUrl.pathname.startsWith("/login") ||
-    request.nextUrl.pathname.startsWith("/auth");
+    path.startsWith("/login") || path.startsWith("/auth");
 
-  const isPublicRoute = request.nextUrl.pathname === "/";
+  // Portal do contador: acesso via token na URL, sem login.
+  const isPortalRoute =
+    path.startsWith("/portal") || path.startsWith("/api/portal");
 
-  if (!user && !isAuthRoute && !isPublicRoute) {
+  const isPublicRoute = path === "/";
+
+  if (!user && !isAuthRoute && !isPublicRoute && !isPortalRoute) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);

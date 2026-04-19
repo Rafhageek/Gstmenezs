@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { signIn, signUp, type AuthFormState } from "./actions";
 
@@ -9,27 +9,47 @@ const STORAGE_KEY = "painelmnz:email_lembrado";
 
 export function LoginForm() {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
-  const action = mode === "signin" ? signIn : signUp;
-  const [state, formAction] = useActionState(action, initial);
 
-  const [emailInicial, setEmailInicial] = useState("");
+  return (
+    <div className="mt-6">
+      <div className="animate-fade-in mb-6 flex rounded-lg bg-black/30 p-1">
+        <Tab active={mode === "signin"} onClick={() => setMode("signin")}>
+          Entrar
+        </Tab>
+        <Tab active={mode === "signup"} onClick={() => setMode("signup")}>
+          Criar conta
+        </Tab>
+      </div>
+
+      {/* Forms isolados — cada um com seu próprio useActionState.
+          Unmount do outro limpa qualquer erro residual. */}
+      {mode === "signin" ? <SignInForm /> : <SignUpForm />}
+    </div>
+  );
+}
+
+/* ============================================================
+ * Form: Entrar
+ * ============================================================ */
+function SignInForm() {
+  const [state, formAction] = useActionState(signIn, initial);
   const [lembrar, setLembrar] = useState(true);
-  const emailRef = useRef<HTMLInputElement>(null);
+  const [emailInicial, setEmailInicial] = useState("");
 
-  // Carrega e-mail salvo ao montar
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         setEmailInicial(saved);
         setLembrar(true);
+      } else {
+        setLembrar(false);
       }
     } catch {
-      /* localStorage indisponível — ignore */
+      /* ignore */
     }
   }, []);
 
-  // Handler de submit para persistir/remover e-mail antes do form action
   function handleSubmit(formData: FormData) {
     const email = String(formData.get("email") ?? "").trim();
     try {
@@ -45,91 +65,100 @@ export function LoginForm() {
   }
 
   return (
-    <div className="mt-6">
-      <div className="animate-fade-in mb-6 flex rounded-lg bg-black/30 p-1">
-        <Tab active={mode === "signin"} onClick={() => setMode("signin")}>
-          Entrar
-        </Tab>
-        <Tab active={mode === "signup"} onClick={() => setMode("signup")}>
-          Criar conta
-        </Tab>
-      </div>
+    <form action={handleSubmit} className="space-y-4">
+      <Field label="E-mail" icon={<MailIcon />}>
+        <input
+          name="email"
+          type="email"
+          required
+          autoComplete="email"
+          defaultValue={emailInicial}
+          key={emailInicial}
+          placeholder="advogado@menezes.adv.br"
+          className={inputClass}
+        />
+      </Field>
 
-      <form action={handleSubmit} className="space-y-4">
-        {mode === "signup" && (
-          <Field label="Nome completo" icon={<UserIcon />}>
-            <input
-              name="nome"
-              type="text"
-              required
-              placeholder="Dr(a). Nome Sobrenome"
-              className={inputClass}
-              autoComplete="name"
-            />
-          </Field>
-        )}
+      <Field label="Senha" icon={<LockIcon />}>
+        <PasswordInput required />
+      </Field>
 
-        <Field label="E-mail" icon={<MailIcon />}>
-          <input
-            ref={emailRef}
-            name="email"
-            type="email"
-            required
-            autoComplete="email"
-            defaultValue={emailInicial}
-            key={emailInicial /* força re-render ao carregar localStorage */}
-            placeholder="advogado@menezes.adv.br"
-            className={inputClass}
-          />
-        </Field>
+      <label className="flex cursor-pointer items-center gap-2 text-xs text-[var(--muted)] select-none">
+        <input
+          type="checkbox"
+          checked={lembrar}
+          onChange={(e) => setLembrar(e.target.checked)}
+          className="h-4 w-4 cursor-pointer rounded border-[var(--border)] bg-black/30 text-[var(--gold)] focus:ring-[var(--gold)]"
+        />
+        Lembrar meu e-mail neste dispositivo
+      </label>
 
-        <Field label="Senha" icon={<LockIcon />}>
-          <PasswordInput
-            minLength={mode === "signup" ? 8 : undefined}
-            required
-          />
-        </Field>
+      {state.error && <ErrorAlert message={state.error} />}
 
-        {mode === "signin" && (
-          <label className="flex cursor-pointer items-center gap-2 text-xs text-[var(--muted)] select-none">
-            <input
-              type="checkbox"
-              checked={lembrar}
-              onChange={(e) => setLembrar(e.target.checked)}
-              className="h-4 w-4 cursor-pointer rounded border-[var(--border)] bg-black/30 text-[var(--gold)] focus:ring-[var(--gold)]"
-            />
-            Lembrar meu e-mail neste dispositivo
-          </label>
-        )}
+      <SubmitButton mode="signin" />
 
-        {state.error && (
-          <p
-            role="alert"
-            className="animate-fade-in rounded-md border border-[var(--danger)]/40 bg-[var(--danger)]/10 px-3 py-2 text-sm text-[var(--danger)]"
-          >
-            {state.error}
-          </p>
-        )}
-
-        <SubmitButton mode={mode} />
-
-        {mode === "signin" && (
-          <p className="pt-2 text-center text-[11px] text-[var(--muted)]/70">
-            Seu login é protegido por criptografia. Credenciais não são
-            armazenadas neste dispositivo — apenas o e-mail (se você escolher).
-          </p>
-        )}
-      </form>
-    </div>
+      <p className="pt-2 text-center text-[11px] text-[var(--muted)]/70">
+        Seu login é protegido por criptografia. Credenciais não são armazenadas
+        neste dispositivo — apenas o e-mail (se você escolher).
+      </p>
+    </form>
   );
 }
 
 /* ============================================================
- * Sub-componentes
+ * Form: Criar conta
+ * ============================================================ */
+function SignUpForm() {
+  const [state, formAction] = useActionState(signUp, initial);
+
+  return (
+    <form action={formAction} className="space-y-4">
+      <Field label="Nome completo" icon={<UserIcon />}>
+        <input
+          name="nome"
+          type="text"
+          required
+          placeholder="Dr(a). Nome Sobrenome"
+          autoComplete="name"
+          className={inputClass}
+        />
+      </Field>
+
+      <Field label="E-mail" icon={<MailIcon />}>
+        <input
+          name="email"
+          type="email"
+          required
+          autoComplete="email"
+          placeholder="advogado@menezes.adv.br"
+          className={inputClass}
+        />
+      </Field>
+
+      <Field label="Senha" icon={<LockIcon />}>
+        <PasswordInput required minLength={8} />
+      </Field>
+
+      {state.error && (
+        <ErrorAlert
+          message={state.error}
+          variant={
+            state.error.startsWith("Conta criada") ? "info" : "danger"
+          }
+        />
+      )}
+
+      <SubmitButton mode="signup" />
+    </form>
+  );
+}
+
+/* ============================================================
+ * Shared
  * ============================================================ */
 
 const inputClass =
-  "peer w-full rounded-lg border border-[var(--border)] bg-black/30 py-2.5 pl-10 pr-3 text-sm text-foreground outline-none transition-all duration-150 placeholder:text-[var(--muted)]/60 focus:border-[var(--gold)] focus:ring-1 focus:ring-[var(--gold)]";
+  "w-full rounded-lg border border-[var(--border)] bg-black/30 py-2.5 pl-10 pr-3 text-sm text-foreground outline-none transition-all duration-150 placeholder:text-[var(--muted)]/60 focus:border-[var(--gold)] focus:ring-1 focus:ring-[var(--gold)]";
 
 function Tab({
   active,
@@ -172,7 +201,7 @@ function Field({
       <div className="relative">
         <span
           aria-hidden
-          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)] transition-colors peer-focus:text-[var(--gold)]"
+          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)]"
         >
           {icon}
         </span>
@@ -220,6 +249,27 @@ function PasswordInput({
   );
 }
 
+function ErrorAlert({
+  message,
+  variant = "danger",
+}: {
+  message: string;
+  variant?: "danger" | "info";
+}) {
+  const classes =
+    variant === "info"
+      ? "border-[var(--gold)]/40 bg-[var(--gold)]/10 text-[var(--gold)]"
+      : "border-[var(--danger)]/40 bg-[var(--danger)]/10 text-[var(--danger)]";
+  return (
+    <p
+      role="alert"
+      className={`animate-fade-in rounded-md border px-3 py-2 text-sm ${classes}`}
+    >
+      {message}
+    </p>
+  );
+}
+
 function SubmitButton({ mode }: { mode: "signin" | "signup" }) {
   const { pending } = useFormStatus();
   return (
@@ -250,7 +300,7 @@ function SubmitButton({ mode }: { mode: "signin" | "signup" }) {
 }
 
 /* ============================================================
- * Ícones SVG inline (sem biblioteca)
+ * Ícones SVG inline
  * ============================================================ */
 
 function iconProps() {

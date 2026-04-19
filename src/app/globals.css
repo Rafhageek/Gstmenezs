@@ -110,6 +110,20 @@ body {
 .animate-delay-3 { animation-delay: 180ms; }
 .animate-delay-4 { animation-delay: 240ms; }
 
+/* Sino balançando (quando há alerta urgente) */
+@keyframes bell-ring {
+  0%, 50%, 100% { transform: rotate(0); }
+  10%, 30% { transform: rotate(-10deg); }
+  20%, 40% { transform: rotate(10deg); }
+}
+.bell-ring {
+  animation: bell-ring 2.6s ease-in-out infinite;
+  transform-origin: 50% 10%;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bell-ring { animation: none; }
+}
+
 /* ============================================================
  * Welcome splash — tela de boas-vindas após login
  * ============================================================ */

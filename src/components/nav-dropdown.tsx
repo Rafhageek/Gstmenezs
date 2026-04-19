@@ -50,7 +50,7 @@ export function NavDropdown({ label, items }: Props) {
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className={`flex items-center gap-1 text-sm transition-colors ${
+        className={`group flex items-center gap-1 text-sm transition-colors duration-200 ${
           ativo || open
             ? "text-foreground"
             : "text-[var(--muted)] hover:text-foreground"
@@ -64,19 +64,22 @@ export function NavDropdown({ label, items }: Props) {
           fill="none"
           stroke="currentColor"
           strokeWidth="2"
-          className={`transition-transform ${open ? "rotate-180" : ""}`}
+          className={`transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-y-0.5 ${
+            open ? "rotate-180" : ""
+          }`}
           aria-hidden
         >
           <path d="m6 9 6 6 6-6" />
         </svg>
-      </button>
 
-      {ativo && (
-        <div
+        {/* Underline que nasce do centro — ativo permanente; hover cresce. */}
+        <span
           aria-hidden
-          className="absolute -bottom-[19px] left-0 right-0 h-0.5 rounded-full bg-[var(--gold)]"
+          className={`pointer-events-none absolute -bottom-[19px] left-1/2 h-[2px] -translate-x-1/2 rounded-full bg-[var(--gold)] transition-[width] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+            ativo || open ? "w-full" : "w-0 group-hover:w-full"
+          }`}
         />
-      )}
+      </button>
 
       {open && (
         <div className="animate-fade-in-up absolute left-0 top-full z-40 mt-4 min-w-[220px] overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--background-elevated)] shadow-2xl shadow-black/50">
@@ -90,18 +93,18 @@ export function NavDropdown({ label, items }: Props) {
                   key={item.href}
                   href={item.href}
                   onClick={() => setOpen(false)}
-                  className={`flex items-start gap-3 rounded-md px-3 py-2 transition-colors ${
+                  className={`group/item flex items-start gap-3 rounded-md px-3 py-2 transition-all duration-200 ${
                     itemActive
                       ? "bg-[var(--gold)]/10 text-[var(--gold)]"
-                      : "text-foreground hover:bg-black/30"
+                      : "text-foreground hover:bg-black/30 hover:pl-4"
                   }`}
                 >
                   {item.icon && (
-                    <span className="mt-0.5 text-[var(--muted)]">
+                    <span className="mt-0.5 text-[var(--muted)] transition-colors group-hover/item:text-[var(--gold)]">
                       {item.icon}
                     </span>
                   )}
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium">{item.label}</p>
                     {item.descricao && (
                       <p className="mt-0.5 text-xs text-[var(--muted)]">
@@ -109,6 +112,15 @@ export function NavDropdown({ label, items }: Props) {
                       </p>
                     )}
                   </div>
+                  {/* Seta que aparece no hover (só para não-ativos) */}
+                  {!itemActive && (
+                    <span
+                      aria-hidden
+                      className="mt-1 shrink-0 text-[var(--muted)] opacity-0 transition-all duration-200 group-hover/item:translate-x-1 group-hover/item:text-[var(--gold)] group-hover/item:opacity-100"
+                    >
+                      →
+                    </span>
+                  )}
                 </Link>
               );
             })}

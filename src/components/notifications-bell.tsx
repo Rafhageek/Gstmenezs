@@ -43,12 +43,22 @@ export function NotificationsBell({ proximas, atrasadas }: Props) {
         aria-label={`${total} notificações`}
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
-        className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--border)] text-[var(--muted)] transition-colors hover:border-[var(--gold)] hover:text-foreground"
+        className={`group relative flex h-9 w-9 items-center justify-center rounded-lg border text-[var(--muted)] transition-all duration-200 ${
+          open
+            ? "border-[var(--gold)] bg-[var(--gold)]/10 text-foreground shadow-[0_0_0_3px_rgba(201,169,97,0.15)]"
+            : "border-[var(--border)] hover:border-[var(--gold)] hover:bg-[var(--gold)]/5 hover:text-foreground"
+        }`}
       >
-        <BellIcon />
+        <span
+          className={`transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-110 ${
+            temUrgente && !open ? "bell-ring" : ""
+          }`}
+        >
+          <BellIcon />
+        </span>
         {total > 0 && (
           <span
-            className={`absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full px-1 text-[10px] font-semibold ${
+            className={`absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full px-1 text-[10px] font-semibold transition-transform group-hover:scale-110 ${
               temUrgente
                 ? "bg-[var(--danger)] text-white"
                 : "bg-[var(--gold)] text-[var(--background)]"

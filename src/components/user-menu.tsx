@@ -53,14 +53,14 @@ export function UserMenu({ nome, email, role }: Props) {
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-label="Menu do usuário"
-        className={`flex h-9 items-center gap-2 rounded-lg border px-1.5 py-1 text-xs transition-colors ${
+        className={`group flex h-9 items-center gap-2 rounded-lg border px-1.5 py-1 text-xs transition-all duration-200 ${
           open
-            ? "border-[var(--gold)] bg-[var(--gold)]/10"
-            : "border-[var(--border)] hover:border-[var(--gold)]"
+            ? "border-[var(--gold)] bg-[var(--gold)]/10 shadow-[0_0_0_3px_rgba(201,169,97,0.15)]"
+            : "border-[var(--border)] hover:border-[var(--gold)] hover:bg-[var(--gold)]/5"
         }`}
       >
         <span
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-[var(--gold)]/60 bg-[var(--gold)]/15 font-mono text-xs font-bold text-[var(--gold)]"
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-[var(--gold)]/60 bg-[var(--gold)]/15 font-mono text-xs font-bold text-[var(--gold)] transition-all duration-200 group-hover:border-[var(--gold)] group-hover:bg-[var(--gold)]/25"
           aria-hidden
         >
           {iniciais}
@@ -82,7 +82,7 @@ export function UserMenu({ nome, email, role }: Props) {
           fill="none"
           stroke="currentColor"
           strokeWidth="2"
-          className={`hidden md:block text-[var(--muted)] transition-transform ${
+          className={`hidden md:block text-[var(--muted)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:text-[var(--gold)] ${
             open ? "rotate-180" : ""
           }`}
           aria-hidden
@@ -190,10 +190,18 @@ function MenuLink({
     <Link
       href={href}
       onClick={onClick}
-      className="flex items-center gap-3 rounded-md px-3 py-2 text-sm text-foreground transition-colors hover:bg-black/30"
+      className="group/mi flex items-center gap-3 rounded-md px-3 py-2 text-sm text-foreground transition-all duration-200 hover:bg-black/30 hover:pl-4"
     >
-      <span className="text-[var(--muted)]">{icon}</span>
-      {label}
+      <span className="text-[var(--muted)] transition-colors group-hover/mi:text-[var(--gold)]">
+        {icon}
+      </span>
+      <span className="flex-1">{label}</span>
+      <span
+        aria-hidden
+        className="text-[var(--muted)] opacity-0 transition-all duration-200 group-hover/mi:translate-x-0.5 group-hover/mi:text-[var(--gold)] group-hover/mi:opacity-100"
+      >
+        →
+      </span>
     </Link>
   );
 }

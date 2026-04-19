@@ -114,11 +114,13 @@ export function CommandPalette() {
         type="button"
         aria-label="Abrir busca (Ctrl+K)"
         onClick={() => setOpen(true)}
-        className="hidden items-center gap-2 rounded-lg border border-[var(--border)] bg-black/30 px-3 py-1.5 text-xs text-[var(--muted)] transition-colors hover:border-[var(--gold)] hover:text-foreground md:inline-flex"
+        className="group hidden items-center gap-2 rounded-lg border border-[var(--border)] bg-black/30 px-3 py-1.5 text-xs text-[var(--muted)] transition-all duration-200 hover:border-[var(--gold)] hover:bg-[var(--gold)]/5 hover:text-foreground md:inline-flex"
       >
-        <SearchIcon />
+        <span className="transition-colors group-hover:text-[var(--gold)]">
+          <SearchIcon />
+        </span>
         <span>Buscar...</span>
-        <kbd className="rounded border border-[var(--border)] bg-black/40 px-1.5 font-mono text-[10px]">
+        <kbd className="rounded border border-[var(--border)] bg-black/40 px-1.5 font-mono text-[10px] transition-colors group-hover:border-[var(--gold)]/60 group-hover:text-[var(--gold)]">
           Ctrl K
         </kbd>
       </button>

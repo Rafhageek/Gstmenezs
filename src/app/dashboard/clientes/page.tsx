@@ -76,6 +76,12 @@ export default async function ClientesPage({
             <Badge key="s" variant="neutral">Inativo</Badge>
           ),
           <div key="a" className="flex gap-3 text-xs">
+            <Link
+              href={`/dashboard/clientes/${c.id}`}
+              className="text-[var(--gold)] hover:underline"
+            >
+              Detalhes
+            </Link>
             <a
               href={`/api/relatorios/extrato-cliente/${c.id}`}
               target="_blank"
@@ -83,11 +89,11 @@ export default async function ClientesPage({
               className="text-[var(--muted)] hover:text-[var(--gold)] hover:underline"
               title="Imprimir extrato em PDF"
             >
-              Extrato
+              PDF
             </a>
             <Link
               href={`/dashboard/clientes/${c.id}/editar`}
-              className="text-[var(--gold)] hover:underline"
+              className="text-[var(--muted)] hover:text-foreground hover:underline"
             >
               Editar
             </Link>

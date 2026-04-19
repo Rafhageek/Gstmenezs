@@ -95,6 +95,8 @@ export interface Pagamento {
   cessao_id: string;
   numero_parcela: number;
   valor: number;
+  /** Valor esperado originalmente (para detectar pagamento parcial). */
+  valor_original: number;
   data_vencimento: string;
   data_pagamento: string | null;
   tipo: PagamentoTipo;
@@ -124,6 +126,36 @@ export interface LogAuditoriaView extends LogAuditoria {
   user_nome: string;
   user_email: string | null;
   user_role: UserRole | null;
+}
+
+export interface Configuracoes {
+  id: number;
+  razao_social: string;
+  nome_fantasia: string | null;
+  cnpj: string | null;
+  oab: string | null;
+  endereco: Endereco | null;
+  telefone: string | null;
+  email: string | null;
+  site: string | null;
+  logo_url: string | null;
+  cor_primaria: string | null;
+  legenda_pdf: string | null;
+  updated_at: string;
+  updated_by: string | null;
+}
+
+export interface TimelineEvento {
+  cessao_id: string;
+  evento_em: string;
+  tipo:
+    | "cessao_criada"
+    | "pagamento"
+    | "estorno"
+    | "pagamento_parcial"
+    | "cancelada";
+  descricao: string;
+  valor: number | null;
 }
 
 export interface CessaoResumo {

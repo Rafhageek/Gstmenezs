@@ -8,14 +8,15 @@ import {
   PdfFooter,
 } from "./components";
 import { formatBRL, formatDataBR, formatDocumento } from "@/lib/format";
-import type { InadimplenciaItem } from "@/types/database";
+import type { InadimplenciaItem, Configuracoes } from "@/types/database";
 
 interface Props {
   itens: InadimplenciaItem[];
   emitidoEm: string;
+  config: Configuracoes;
 }
 
-export function InadimplenciaPDF({ itens, emitidoEm }: Props) {
+export function InadimplenciaPDF({ itens, emitidoEm, config }: Props) {
   const totalValor = itens.reduce((s, i) => s + Number(i.valor), 0);
   const clientesUnicos = new Set(itens.map((i) => i.cliente_id)).size;
   const cessoesUnicas = new Set(itens.map((i) => i.numero_contrato)).size;
@@ -23,12 +24,13 @@ export function InadimplenciaPDF({ itens, emitidoEm }: Props) {
   return (
     <Document
       title="Relatório de Inadimplência"
-      author="Menezes Advocacia"
+      author={config.razao_social}
     >
       <Page size="A4" style={pdfStyles.page}>
         <PdfHeader
           reportTitle="Relatório de inadimplência"
           reportDate={emitidoEm}
+          razaoSocial={config.razao_social}
         />
 
         <PdfTitle
@@ -181,7 +183,18 @@ export function InadimplenciaPDF({ itens, emitidoEm }: Props) {
           )}
         </PdfSection>
 
-        <PdfFooter legenda="Documento sigiloso — protegido por dever de sigilo profissional (OAB)" />
+        <PdfFooter
+          legenda={
+            config.legenda_pdf
+              ? `${config.legenda_pdf} — sigilo profissional OAB`
+              : "Documento sigiloso — protegido por dever de sigilo profissional (OAB)"
+          }
+          contato={
+            [config.telefone, config.email, config.cnpj ? `CNPJ ${config.cnpj}` : null]
+              .filter(Boolean)
+              .join("  ·  ") || undefined
+          }
+        />
       </Page>
     </Document>
   );

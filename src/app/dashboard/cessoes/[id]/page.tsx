@@ -4,12 +4,19 @@ import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/feedback";
 import { formatBRL, formatDataBR, formatDocumento } from "@/lib/format";
-import { PagarParcelaButton, EstornarButton } from "./parcela-actions";
+import {
+  PagarParcelaButton,
+  EstornarButton,
+  VerComprovanteLink,
+} from "./parcela-actions";
+import { CancelarCessaoButton } from "./cancelar-cessao-button";
+import { CessaoTimeline } from "./cessao-timeline";
 import type {
   CessaoCredito,
   ClientePrincipal,
   Cessionario,
   Pagamento,
+  TimelineEvento,
 } from "@/types/database";
 
 export const metadata = {
@@ -29,21 +36,28 @@ export default async function CessaoDetalhesPage({ params }: Props) {
   const { id } = await params;
   const supabase = await createClient();
 
-  const [{ data: cessao }, { data: pagamentos }] = await Promise.all([
-    supabase
-      .from("cessoes_credito")
-      .select(
-        `*, cliente_principal:clientes_principais(id,nome,documento), cessionario:cessionarios(id,nome,documento)`,
-      )
-      .eq("id", id)
-      .single<CessaoFull>(),
-    supabase
-      .from("pagamentos")
-      .select("*")
-      .eq("cessao_id", id)
-      .order("numero_parcela", { ascending: true })
-      .returns<Pagamento[]>(),
-  ]);
+  const [{ data: cessao }, { data: pagamentos }, { data: timeline }] =
+    await Promise.all([
+      supabase
+        .from("cessoes_credito")
+        .select(
+          `*, cliente_principal:clientes_principais(id,nome,documento), cessionario:cessionarios(id,nome,documento)`,
+        )
+        .eq("id", id)
+        .single<CessaoFull>(),
+      supabase
+        .from("pagamentos")
+        .select("*")
+        .eq("cessao_id", id)
+        .order("numero_parcela", { ascending: true })
+        .returns<Pagamento[]>(),
+      supabase
+        .from("v_timeline_cessao")
+        .select("*")
+        .eq("cessao_id", id)
+        .order("evento_em", { ascending: false })
+        .returns<TimelineEvento[]>(),
+    ]);
 
   if (!cessao) notFound();
 
@@ -77,6 +91,12 @@ export default async function CessaoDetalhesPage({ params }: Props) {
         >
           ⬇ Imprimir PDF
         </a>
+        {cessao.status !== "cancelada" && cessao.status !== "quitada" && (
+          <CancelarCessaoButton
+            cessaoId={cessao.id}
+            numeroContrato={cessao.numero_contrato}
+          />
+        )}
       </div>
 
       <section className="grid grid-cols-1 gap-4 md:grid-cols-4">
@@ -131,6 +151,9 @@ export default async function CessaoDetalhesPage({ params }: Props) {
                     {p.is_reversal && (
                       <Badge variant="danger">estorno</Badge>
                     )}
+                    {p.tipo === "ajuste" && (
+                      <Badge variant="warning">saldo</Badge>
+                    )}
                   </td>
                   <td className="px-4 py-3">{formatDataBR(p.data_vencimento)}</td>
                   <td
@@ -140,9 +163,19 @@ export default async function CessaoDetalhesPage({ params }: Props) {
                   >
                     {p.is_reversal ? "−" : ""}
                     {formatBRL(p.valor)}
+                    {p.valor < p.valor_original && !p.is_reversal && (
+                      <div className="text-[10px] font-normal text-[var(--muted)]">
+                        de {formatBRL(p.valor_original)}
+                      </div>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-[var(--muted)]">
                     {formatDataBR(p.data_pagamento)}
+                    {p.comprovante_url && (
+                      <div className="mt-1">
+                        <VerComprovanteLink path={p.comprovante_url} />
+                      </div>
+                    )}
                   </td>
                   <td className="px-4 py-3">
                     <ParcelaStatus parcela={p} />
@@ -156,6 +189,15 @@ export default async function CessaoDetalhesPage({ params }: Props) {
           </table>
         </div>
       </section>
+
+      {timeline && timeline.length > 0 && (
+        <section className="mt-10">
+          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">
+            Linha do tempo
+          </h2>
+          <CessaoTimeline eventos={timeline} />
+        </section>
+      )}
     </div>
   );
 }
@@ -236,6 +278,7 @@ function ParcelaAcao({ parcela }: { parcela: Pagamento }) {
       <PagarParcelaButton
         pagamentoId={parcela.id}
         valorSugerido={Number(parcela.valor)}
+        valorOriginal={Number(parcela.valor_original)}
       />
     );
   }

@@ -25,6 +25,7 @@ import type {
   ClientePrincipal,
   Cessionario,
   Pagamento,
+  Configuracoes,
 } from "@/types/database";
 
 interface Props {
@@ -33,6 +34,7 @@ interface Props {
   cessionario: Pick<Cessionario, "nome" | "documento" | "email" | "telefone">;
   parcelas: Pagamento[];
   emitidoEm: string;
+  config: Configuracoes;
 }
 
 export function CessaoPDF({
@@ -41,6 +43,7 @@ export function CessaoPDF({
   cessionario,
   parcelas,
   emitidoEm,
+  config,
 }: Props) {
   const saldo = Number(cessao.valor_total) - Number(cessao.valor_pago);
   const pct =
@@ -52,12 +55,13 @@ export function CessaoPDF({
   return (
     <Document
       title={`Cessão ${cessao.numero_contrato}`}
-      author="Menezes Advocacia"
+      author={config.razao_social}
     >
       <Page size="A4" style={pdfStyles.page}>
         <PdfHeader
           reportTitle="Relatório de cessão"
           reportDate={emitidoEm}
+          razaoSocial={config.razao_social}
         />
 
         <PdfTitle
@@ -216,10 +220,23 @@ export function CessaoPDF({
           </View>
         </PdfSection>
 
-        <PdfFooter />
+        <PdfFooter
+          legenda={
+            config.legenda_pdf ??
+            "Documento gerado pelo sistema Painel MNZ"
+          }
+          contato={formatarContato(config)}
+        />
       </Page>
     </Document>
   );
+}
+
+function formatarContato(c: Configuracoes): string | undefined {
+  const partes = [c.telefone, c.email, c.site, c.cnpj ? `CNPJ ${c.cnpj}` : null]
+    .filter(Boolean)
+    .join("  ·  ");
+  return partes || undefined;
 }
 
 function ParcelaPill({ parcela, hoje }: { parcela: Pagamento; hoje: string }) {

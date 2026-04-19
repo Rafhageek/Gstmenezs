@@ -15,6 +15,8 @@ export interface PagamentoActionResult {
 export async function registrarPagamento(
   formData: FormData,
 ): Promise<PagamentoActionResult> {
+  const isParcial = formData.get("parcial") === "true";
+
   const parsed = registrarPagamentoSchema.safeParse({
     pagamento_id: formData.get("pagamento_id"),
     data_pagamento: formData.get("data_pagamento"),
@@ -27,14 +29,25 @@ export async function registrarPagamento(
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.rpc("registrar_pagamento", {
-    p_pagamento_id: parsed.data.pagamento_id,
-    p_data_pagamento: parsed.data.data_pagamento,
-    p_valor: parsed.data.valor ?? null,
-    p_observacoes: parsed.data.observacoes ?? null,
-  });
 
-  if (error) return { error: error.message };
+  // Se for parcial, usa RPC que gera parcela de saldo automaticamente
+  if (isParcial && parsed.data.valor) {
+    const { error } = await supabase.rpc("registrar_pagamento_parcial", {
+      p_pagamento_id: parsed.data.pagamento_id,
+      p_data_pagamento: parsed.data.data_pagamento,
+      p_valor_recebido: parsed.data.valor,
+      p_observacoes: parsed.data.observacoes ?? null,
+    });
+    if (error) return { error: error.message };
+  } else {
+    const { error } = await supabase.rpc("registrar_pagamento", {
+      p_pagamento_id: parsed.data.pagamento_id,
+      p_data_pagamento: parsed.data.data_pagamento,
+      p_valor: parsed.data.valor ?? null,
+      p_observacoes: parsed.data.observacoes ?? null,
+    });
+    if (error) return { error: error.message };
+  }
 
   // Upload de comprovante (opcional)
   const comprovante = formData.get("comprovante") as File | null;

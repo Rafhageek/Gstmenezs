@@ -5,18 +5,23 @@ import { pdfStyles, PDF_COLORS } from "./theme";
 export function PdfHeader({
   reportTitle,
   reportDate,
+  razaoSocial = "Menezes Advocacia",
 }: {
   reportTitle: string;
   reportDate: string;
+  razaoSocial?: string;
 }) {
+  const firstLetter = razaoSocial.charAt(0).toUpperCase();
   return (
     <View style={pdfStyles.header} fixed>
       <View style={pdfStyles.brand}>
         <View style={pdfStyles.logoBox}>
-          <Text style={pdfStyles.logoLetter}>M</Text>
+          <Text style={pdfStyles.logoLetter}>{firstLetter}</Text>
         </View>
         <View style={pdfStyles.brandText}>
-          <Text style={pdfStyles.brandLine1}>MENEZES ADVOCACIA</Text>
+          <Text style={pdfStyles.brandLine1}>
+            {razaoSocial.toUpperCase()}
+          </Text>
           <Text style={pdfStyles.brandLine2}>Painel MNZ</Text>
         </View>
       </View>
@@ -100,12 +105,19 @@ export function PdfInfo({
 /* Rodapé fixo (rodapé persistente em todas as páginas) */
 export function PdfFooter({
   legenda = "Documento gerado pelo sistema Painel MNZ — uso interno do escritório",
+  contato,
 }: {
   legenda?: string;
+  contato?: string;
 }) {
   return (
     <View style={pdfStyles.footer} fixed>
-      <Text>{legenda}</Text>
+      <View>
+        <Text>{legenda}</Text>
+        {contato && (
+          <Text style={{ marginTop: 2, opacity: 0.7 }}>{contato}</Text>
+        )}
+      </View>
       <Text
         render={({ pageNumber, totalPages }) =>
           `Página ${pageNumber} de ${totalPages}`

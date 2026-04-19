@@ -1,6 +1,7 @@
 import { renderToStream } from "@react-pdf/renderer";
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { getConfiguracoes } from "@/lib/configuracoes";
 import { CessaoPDF } from "@/lib/pdf/cessao-pdf";
 import type {
   CessaoCredito,
@@ -30,7 +31,7 @@ export async function GET(
   const { id } = await params;
   const supabase = await createClient();
 
-  const [cessaoRes, parcelasRes] = await Promise.all([
+  const [cessaoRes, parcelasRes, config] = await Promise.all([
     supabase
       .from("cessoes_credito")
       .select(
@@ -44,6 +45,7 @@ export async function GET(
       .eq("cessao_id", id)
       .order("numero_parcela", { ascending: true })
       .returns<Pagamento[]>(),
+    getConfiguracoes(),
   ]);
 
   if (cessaoRes.error || !cessaoRes.data) {
@@ -66,6 +68,7 @@ export async function GET(
       cessionario={cessao.cessionario}
       parcelas={parcelas}
       emitidoEm={emitidoEm}
+      config={config}
     />,
   );
 

@@ -1,6 +1,7 @@
 import { renderToStream } from "@react-pdf/renderer";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { getConfiguracoes } from "@/lib/configuracoes";
 import { InadimplenciaPDF } from "@/lib/pdf/inadimplencia-pdf";
 import type { InadimplenciaItem } from "@/types/database";
 
@@ -10,10 +11,13 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const supabase = await createClient();
 
-  const { data, error } = await supabase
-    .from("v_inadimplencia")
-    .select("*")
-    .returns<InadimplenciaItem[]>();
+  const [{ data, error }, config] = await Promise.all([
+    supabase
+      .from("v_inadimplencia")
+      .select("*")
+      .returns<InadimplenciaItem[]>(),
+    getConfiguracoes(),
+  ]);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -24,7 +28,7 @@ export async function GET() {
   });
 
   const stream = await renderToStream(
-    <InadimplenciaPDF itens={data ?? []} emitidoEm={emitidoEm} />,
+    <InadimplenciaPDF itens={data ?? []} emitidoEm={emitidoEm} config={config} />,
   );
 
   return new NextResponse(stream as unknown as ReadableStream, {

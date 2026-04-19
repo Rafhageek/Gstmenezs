@@ -1,6 +1,7 @@
 import { renderToStream } from "@react-pdf/renderer";
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { getConfiguracoes } from "@/lib/configuracoes";
 import { ExtratoClientePDF } from "@/lib/pdf/extrato-cliente-pdf";
 import type {
   ClientePrincipal,
@@ -18,7 +19,7 @@ export async function GET(
   const { id } = await params;
   const supabase = await createClient();
 
-  const [clienteRes, extratoRes, cessoesIdsRes] = await Promise.all([
+  const [clienteRes, extratoRes, cessoesIdsRes, config] = await Promise.all([
     supabase
       .from("clientes_principais")
       .select("*")
@@ -34,6 +35,7 @@ export async function GET(
       .select("id")
       .eq("cliente_principal_id", id)
       .returns<{ id: string }[]>(),
+    getConfiguracoes(),
   ]);
 
   const cessaoIds = (cessoesIdsRes.data ?? []).map((c) => c.id);
@@ -78,6 +80,7 @@ export async function GET(
       extrato={extrato}
       cessoes={cessoes}
       emitidoEm={emitidoEm}
+      config={config}
     />,
   );
 

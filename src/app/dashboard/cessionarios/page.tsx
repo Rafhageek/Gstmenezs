@@ -78,13 +78,20 @@ export default async function CessionariosPage({
           ) : (
             <Badge key="s" variant="neutral">Inativo</Badge>
           ),
-          <Link
-            key="a"
-            href={`/dashboard/cessionarios/${c.id}/editar`}
-            className="text-xs text-[var(--gold)] hover:underline"
-          >
-            Editar
-          </Link>,
+          <div key="a" className="flex gap-3 text-xs">
+            <Link
+              href={`/dashboard/cessionarios/${c.id}`}
+              className="text-[var(--gold)] hover:underline"
+            >
+              Detalhes
+            </Link>
+            <Link
+              href={`/dashboard/cessionarios/${c.id}/editar`}
+              className="text-[var(--muted)] hover:text-foreground hover:underline"
+            >
+              Editar
+            </Link>
+          </div>,
         ])}
       />
     </div>

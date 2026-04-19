@@ -19,6 +19,7 @@ import type {
   ClientePrincipal,
   ExtratoCliente,
   CessaoResumo,
+  Configuracoes,
 } from "@/types/database";
 
 interface Props {
@@ -26,6 +27,7 @@ interface Props {
   extrato: ExtratoCliente;
   cessoes: CessaoResumo[];
   emitidoEm: string;
+  config: Configuracoes;
 }
 
 export function ExtratoClientePDF({
@@ -33,16 +35,18 @@ export function ExtratoClientePDF({
   extrato,
   cessoes,
   emitidoEm,
+  config,
 }: Props) {
   return (
     <Document
       title={`Extrato — ${cliente.nome}`}
-      author="Menezes Advocacia"
+      author={config.razao_social}
     >
       <Page size="A4" style={pdfStyles.page}>
         <PdfHeader
           reportTitle="Extrato consolidado"
           reportDate={emitidoEm}
+          razaoSocial={config.razao_social}
         />
 
         <PdfTitle
@@ -239,7 +243,18 @@ export function ExtratoClientePDF({
           )}
         </PdfSection>
 
-        <PdfFooter legenda="Documento sigiloso — protegido por dever de sigilo profissional (OAB)" />
+        <PdfFooter
+          legenda={
+            config.legenda_pdf
+              ? `${config.legenda_pdf} — sigilo profissional OAB`
+              : "Documento sigiloso — protegido por dever de sigilo profissional (OAB)"
+          }
+          contato={
+            [config.telefone, config.email, config.cnpj ? `CNPJ ${config.cnpj}` : null]
+              .filter(Boolean)
+              .join("  ·  ") || undefined
+          }
+        />
       </Page>
     </Document>
   );

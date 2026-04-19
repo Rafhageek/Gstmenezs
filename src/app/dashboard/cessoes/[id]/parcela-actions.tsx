@@ -8,43 +8,53 @@ import { Alert } from "@/components/ui/feedback";
 import {
   registrarPagamento,
   estornarPagamento,
+  getComprovanteUrl,
 } from "@/app/dashboard/pagamentos/actions";
 import { hojeISO, formatBRL } from "@/lib/format";
 
 interface PagarProps {
   pagamentoId: string;
   valorSugerido: number;
+  valorOriginal: number;
 }
 
 export function PagarParcelaButton({
   pagamentoId,
   valorSugerido,
+  valorOriginal,
 }: PagarProps) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [valorAtual, setValorAtual] = useState(valorSugerido);
   const [pending, startTransition] = useTransition();
+
+  const isParcial = valorAtual < valorOriginal;
+  const saldo = valorOriginal - valorAtual;
 
   function onSubmit(formData: FormData) {
     setError(null);
+    if (isParcial) formData.set("parcial", "true");
     startTransition(async () => {
       const res = await registrarPagamento(formData);
       if (res.error) {
         setError(res.error);
-        toast.error("Erro ao registrar pagamento", { description: res.error });
+        toast.error("Erro ao registrar pagamento", {
+          description: res.error,
+        });
       } else {
         setOpen(false);
-        toast.success("Pagamento registrado");
+        toast.success(
+          isParcial
+            ? `Pagamento parcial registrado — saldo de ${formatBRL(saldo)} gerado`
+            : "Pagamento registrado",
+        );
       }
     });
   }
 
   if (!open) {
     return (
-      <Button
-        variant="primary"
-        size="sm"
-        onClick={() => setOpen(true)}
-      >
+      <Button variant="primary" size="sm" onClick={() => setOpen(true)}>
         Registrar pagamento
       </Button>
     );
@@ -71,17 +81,27 @@ export function PagarParcelaButton({
         </Field>
         <Field
           label="Valor recebido"
-          hint={`Sugerido: ${formatBRL(valorSugerido)}`}
+          hint={`Valor da parcela: ${formatBRL(valorOriginal)}`}
         >
           <Input
             name="valor"
             type="number"
             step="0.01"
             min="0.01"
-            defaultValue={valorSugerido}
+            max={valorOriginal}
+            value={valorAtual}
+            onChange={(e) => setValorAtual(Number(e.target.value) || 0)}
           />
         </Field>
       </div>
+
+      {isParcial && saldo > 0 && (
+        <Alert variant="warning">
+          <strong>Pagamento parcial:</strong> será gerada automaticamente uma
+          nova parcela de saldo no valor de <strong>{formatBRL(saldo)}</strong>{" "}
+          com o mesmo vencimento.
+        </Alert>
+      )}
 
       <Field label="Observações">
         <Textarea name="observacoes" rows={2} placeholder="Notas opcionais" />
@@ -182,5 +202,32 @@ export function EstornarButton({ pagamentoId }: { pagamentoId: string }) {
         </Button>
       </div>
     </form>
+  );
+}
+
+export function VerComprovanteLink({ path }: { path: string }) {
+  const [loading, setLoading] = useState(false);
+
+  async function onClick() {
+    setLoading(true);
+    const url = await getComprovanteUrl(path);
+    setLoading(false);
+    if (url) {
+      window.open(url, "_blank", "noopener,noreferrer");
+    } else {
+      toast.error("Não foi possível gerar link do comprovante");
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={loading}
+      className="text-xs text-[var(--gold)] hover:underline disabled:opacity-60"
+      title="Abrir comprovante (link válido por 5 minutos)"
+    >
+      {loading ? "..." : "📎 Ver comprovante"}
+    </button>
   );
 }

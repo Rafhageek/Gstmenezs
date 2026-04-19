@@ -35,6 +35,7 @@ export default async function DashboardLayout({
     { href: "/dashboard/cessionarios", label: "Cessionários" },
     { href: "/dashboard/cessoes", label: "Cessões" },
     { href: "/dashboard/pagamentos", label: "Pagamentos" },
+    { href: "/dashboard/agenda", label: "Agenda" },
     { href: "/dashboard/relatorios", label: "Relatórios" },
     ...(profile?.role === "admin"
       ? [{ href: "/dashboard/admin/usuarios", label: "Admin" }]

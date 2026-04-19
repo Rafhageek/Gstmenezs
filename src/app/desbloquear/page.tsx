@@ -11,7 +11,6 @@ export const metadata = {
 };
 
 const UNLOCK_COOKIE = "mnz_unlock_at";
-const UNLOCK_MS = 12 * 60 * 60 * 1000;
 
 export default async function DesbloquearPage({
   searchParams,
@@ -29,8 +28,9 @@ export default async function DesbloquearPage({
   if (!user) redirect("/login");
 
   const cookieStore = await cookies();
-  const unlockAt = Number(cookieStore.get(UNLOCK_COOKIE)?.value ?? 0);
-  if (unlockAt && Date.now() - unlockAt < UNLOCK_MS) {
+
+  // Se cookie de unlock existe, já está desbloqueado (maxAge controla validade).
+  if (cookieStore.get(UNLOCK_COOKIE)?.value) {
     redirect(destino);
   }
 
@@ -44,7 +44,7 @@ export default async function DesbloquearPage({
   if (!passkeys || passkeys.length === 0) {
     cookieStore.set({
       name: UNLOCK_COOKIE,
-      value: String(Date.now()),
+      value: "1",
       httpOnly: true,
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",

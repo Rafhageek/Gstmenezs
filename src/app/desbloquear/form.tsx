@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ export function DesbloqueioForm({ destino }: { destino: string }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
-  const [tentouAuto, setTentouAuto] = useState(false);
+  const jaTentouRef = useRef(false);
 
   function desbloquear() {
     setError(null);
@@ -27,12 +27,12 @@ export function DesbloqueioForm({ destino }: { destino: string }) {
     });
   }
 
-  // Tenta desbloquear automaticamente ao entrar na página (uma única vez)
+  // Tenta desbloquear automaticamente ao entrar na página (uma única vez).
+  // Usar ref (não state) evita re-render e setState-em-effect.
   useEffect(() => {
-    if (!tentouAuto) {
-      setTentouAuto(true);
-      desbloquear();
-    }
+    if (jaTentouRef.current) return;
+    jaTentouRef.current = true;
+    desbloquear();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

@@ -12,7 +12,7 @@ async function setarUnlockAt() {
   const cookieStore = await cookies();
   cookieStore.set({
     name: UNLOCK_COOKIE,
-    value: String(Date.now()),
+    value: "1",
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
@@ -32,37 +32,22 @@ export async function signIn(
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
 
-  console.log(
-    `[signIn] tentativa email=${email} passwordLen=${password.length}`,
-  );
-
   if (!email || !password) {
     return { error: "Informe e-mail e senha." };
   }
 
   const supabase = await createClient();
-  const { data, error } = await supabase.auth.signInWithPassword({
+  const { error } = await supabase.auth.signInWithPassword({
     email,
     password,
   });
 
   if (error) {
-    console.log(
-      `[signIn] FALHA email=${email} code=${error.code ?? "?"} status=${error.status ?? "?"} msg="${error.message}"`,
-    );
     return { error: traduzirErroAuth(error.message) };
   }
 
-  console.log(
-    `[signIn] SUCESSO email=${email} userId=${data.user?.id ?? "?"}`,
-  );
-
   // Login fresh com senha concede unlock imediato (12h).
-  try {
-    await setarUnlockAt();
-  } catch (e) {
-    console.error("[signIn] erro ao setar unlock cookie:", e);
-  }
+  await setarUnlockAt();
 
   revalidatePath("/", "layout");
   redirect("/bem-vindo");

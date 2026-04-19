@@ -14,7 +14,7 @@ export async function POST() {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
-    return NextResponse.json({ error: "não autenticado" }, { status: 401 });
+    return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }
 
   const { rpID } = await getWebauthnConfig();
@@ -39,7 +39,9 @@ export async function POST() {
       id: p.credential_id,
       transports: (p.transports ?? []) as AuthenticatorTransport[],
     })),
-    userVerification: "preferred",
+    // "required": exige biometria/PIN real (não só presença do device).
+    // Essencial para contexto jurídico/OAB.
+    userVerification: "required",
   });
 
   await admin.from("passkey_challenges").upsert({

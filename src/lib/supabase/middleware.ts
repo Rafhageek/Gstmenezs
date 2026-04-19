@@ -58,15 +58,10 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Lock biométrico: se usuário autenticado acessa área privada sem unlock
-  // válido (12h), redireciona para /desbloquear. A página /desbloquear
-  // verifica se o usuário tem passkey cadastrada — se não tiver, libera.
+  // Lock biométrico: cookie "mnz_unlock_at" existe = desbloqueado.
+  // Sua validade é controlada pelo maxAge do cookie (12h).
   if (user && path.startsWith("/dashboard") && !isUnlockRoute) {
-    const UNLOCK_MS = 12 * 60 * 60 * 1000;
-    const unlockCookie = request.cookies.get("mnz_unlock_at")?.value;
-    const unlockAt = unlockCookie ? Number(unlockCookie) : 0;
-    const precisaDesbloquear = !unlockAt || Date.now() - unlockAt >= UNLOCK_MS;
-
+    const precisaDesbloquear = !request.cookies.get("mnz_unlock_at")?.value;
     if (precisaDesbloquear) {
       const url = request.nextUrl.clone();
       url.pathname = "/desbloquear";

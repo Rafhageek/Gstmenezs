@@ -47,21 +47,24 @@ export function CommandPalette() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  // Foca o input ao abrir
+  // Foca o input ao abrir. Reset de state ao fechar é intencional.
   useEffect(() => {
     if (open) {
       setTimeout(() => inputRef.current?.focus(), 50);
     } else {
+      /* eslint-disable react-hooks/set-state-in-effect */
       setQuery("");
       setResults([]);
       setActiveIndex(0);
+      /* eslint-enable react-hooks/set-state-in-effect */
     }
   }, [open]);
 
-  // Busca com debounce
+  // Busca com debounce. Limpa resultados quando query < 2 chars.
   useEffect(() => {
     if (!open) return;
     if (query.trim().length < 2) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setResults([]);
       return;
     }

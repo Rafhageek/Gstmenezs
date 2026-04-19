@@ -36,10 +36,13 @@ function SignInForm() {
   const [lembrar, setLembrar] = useState(true);
   const [emailInicial, setEmailInicial] = useState("");
 
+  // Lê localStorage apenas no cliente (SSR-safe) e hidrata o form.
+  // setState em effect aqui é intencional — hydration do browser.
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setEmailInicial(saved);
         setLembrar(true);
       } else {

@@ -33,8 +33,7 @@ export function SearchInput({
       startTransition(() => router.replace(target));
     }, 300);
     return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [valor]);
+  }, [valor, paramName, pathname, router, searchParams]);
 
   return (
     <div className="relative w-full max-w-sm">

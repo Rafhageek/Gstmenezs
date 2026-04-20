@@ -82,16 +82,16 @@ export function CessaoForm({ cessao, clientes, cessionarios }: Props) {
         <Field
           label="Percentual cedido (%)"
           error={e.percentual_cedido}
-          hint="Percentual do crédito cedido ao cessionário (0-100)"
+          hint="Até 4 casas decimais. Ex: 0,016 ou 30"
         >
           <Input
             name="percentual_cedido"
             type="number"
-            step="0.01"
+            step="0.0001"
             min="0"
             max="100"
             defaultValue={cessao?.percentual_cedido ?? ""}
-            placeholder="Ex.: 40"
+            placeholder="0,016"
           />
         </Field>
 

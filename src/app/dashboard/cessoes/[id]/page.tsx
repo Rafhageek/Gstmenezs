@@ -131,7 +131,11 @@ export default async function CessaoDetalhesPage({ params }: Props) {
           }
           value={
             cessao.percentual_cedido != null
-              ? `${Number(cessao.percentual_cedido).toFixed(2)}%`
+              ? `${Number(cessao.percentual_cedido)
+                  .toLocaleString("pt-BR", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 4,
+                  })}%`
               : `${pct.toFixed(1)}%`
           }
           sub={

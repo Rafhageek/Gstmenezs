@@ -131,7 +131,9 @@ export default async function CessionariosPage({
             {c.valor_cessao != null ? formatBRL(c.valor_cessao) : "—"}
           </span>,
           <span key="pc" className="font-mono text-xs">
-            {c.percentual != null ? `${c.percentual}%` : "—"}
+            {c.percentual != null
+              ? `${Number(c.percentual).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 4 })}%`
+              : "—"}
           </span>,
           c.ativo ? (
             <Badge key="s" variant="success">

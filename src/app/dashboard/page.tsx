@@ -4,22 +4,14 @@ import { Badge } from "@/components/ui/feedback";
 import { FluxoMensalChart } from "@/components/charts/fluxo-mensal-chart";
 import { CessoesPizzaChart } from "@/components/charts/cessoes-pizza-chart";
 import { CessaoProgressoPizza } from "@/components/charts/cessao-progresso-pizza";
-import { AgingBuckets } from "@/components/dashboard/aging-buckets";
-import { KpiPrimary } from "@/components/dashboard/kpi-primary";
 import { SessoesLiquidadas } from "@/components/dashboard/sessoes-liquidadas";
 import { AnimatedCounter } from "@/components/ui/animated-counter";
 import { EmptyState } from "@/components/ui/empty-state";
-import {
-  formatBRL,
-  formatDataBR,
-  formatDocumento,
-} from "@/lib/format";
+import { formatBRL } from "@/lib/format";
 import type {
   CessaoResumo,
   FluxoMensal,
   InadimplenciaItem,
-  AgingBucket,
-  DSO,
   ComparativoMes,
   CessaoLiquidada,
   ResumoGeral,
@@ -36,8 +28,6 @@ export default async function DashboardPage() {
     cessoesRes,
     fluxoRes,
     inadRes,
-    agingRes,
-    dsoRes,
     compRes,
     liquidadasRes,
     resumoRes,
@@ -52,8 +42,6 @@ export default async function DashboardPage() {
       .from("v_inadimplencia")
       .select("*")
       .returns<InadimplenciaItem[]>(),
-    supabase.from("v_aging_buckets").select("*").returns<AgingBucket[]>(),
-    supabase.from("v_dso").select("*").maybeSingle<DSO>(),
     supabase
       .from("v_comparativo_mes")
       .select("*")
@@ -72,8 +60,6 @@ export default async function DashboardPage() {
   const cessoes = cessoesRes.data ?? [];
   const fluxo = fluxoRes.data ?? [];
   const inadimplentes = inadRes.data ?? [];
-  const aging = agingRes.data ?? [];
-  const dso = dsoRes.data;
   const comparativo = compRes.data;
   const liquidadas = liquidadasRes.data ?? [];
   const resumoGeral = resumoRes.data;
@@ -84,28 +70,30 @@ export default async function DashboardPage() {
     0,
   );
 
-  const variacao =
-    comparativo && comparativo.mes_anterior > 0
-      ? ((comparativo.mes_atual - comparativo.mes_anterior) /
-          comparativo.mes_anterior) *
-        100
-      : null;
-
   const totais = cessoes.reduce(
     (acc, c) => {
       acc.total += Number(c.valor_total);
       acc.pago += Number(c.valor_pago);
       acc.saldo += Number(c.saldo_devedor);
-      if (c.primeira_parcela_atrasada) acc.cessoesEmAtraso += 1;
       return acc;
     },
-    { total: 0, pago: 0, saldo: 0, cessoesEmAtraso: 0 },
+    { total: 0, pago: 0, saldo: 0 },
   );
 
   const valorAtrasado = inadimplentes.reduce(
     (sum, i) => sum + Number(i.valor),
     0,
   );
+
+  // Contadores por status (para o card "Quantidade de cessões")
+  const contadores = {
+    ativas: cessoes.filter((c) => c.status === "ativa").length,
+    pagas: cessoes.filter((c) => c.status === "quitada").length,
+    inadimplentes: cessoes.filter(
+      (c) => c.status === "inadimplente" || !!c.primeira_parcela_atrasada,
+    ).length,
+    canceladas: cessoes.filter((c) => c.status === "cancelada").length,
+  };
 
   // Pizza por status (top 6 cessões por valor)
   const topCessoes = [...cessoes]
@@ -124,38 +112,36 @@ export default async function DashboardPage() {
   return (
     <div>
       <header className="mb-8">
-        <p className="text-xs uppercase tracking-[0.2em] text-[var(--gold)]">
+        <h1 className="text-4xl font-semibold tracking-tight md:text-5xl">
           Visão geral
-        </p>
-        <h1 className="mt-1 text-3xl font-semibold tracking-tight">
-          Recebíveis em andamento
         </h1>
         <p className="mt-2 text-sm text-[var(--muted)]">
           Painel financeiro consolidado de todas as cessões de crédito.
         </p>
       </header>
 
-      {/* Sessoes liquidadas — topo do dashboard (solicitacao Dr. Jairo) */}
+      {/* Sessoes liquidadas — topo */}
       <section className="mb-6">
         <SessoesLiquidadas cessoes={liquidadas} valorTotal={valorLiquidado} />
       </section>
 
-      {/* KPI primário + secundários */}
-      <section className="grid grid-cols-1 gap-4 lg:grid-cols-4">
-        {/* Primário destacado — ocupa 2 colunas no desktop */}
-        <div className="lg:col-span-2">
-          <KpiPrimary
-            label="Saldo a receber"
-            value={totais.saldo}
-            variacao={variacao}
-            sub={`${cessoesAtivas.length} cessão${cessoesAtivas.length === 1 ? "" : "ões"} a receber · ${formatBRL(totais.total)} volume total`}
-            icon={<IconMoney />}
-          />
-        </div>
+      {/* 3 KPIs na mesma simetria (Saldo a receber | Valores recebidos | Valor a receber) */}
+      <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <KpiAnimado
-          label="Recebido"
+          label="Saldo a receber"
+          value={totais.saldo}
+          accent="gold"
+          sub={`${cessoesAtivas.length} cessão${cessoesAtivas.length === 1 ? "" : "ões"} a receber · ${formatBRL(totais.total)} volume total`}
+        />
+        <KpiAnimado
+          label="Valores recebidos"
           value={totais.pago}
           accent="success"
+          sub={
+            comparativo
+              ? `Este mês: ${formatBRL(comparativo.mes_atual)}`
+              : undefined
+          }
         />
         <KpiAnimado
           label="Valor a receber"
@@ -165,68 +151,57 @@ export default async function DashboardPage() {
         />
       </section>
 
-      {/* KPIs linha 2: DSO + comparativo */}
-      <section className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
-        <Kpi
-          label="DSO (prazo médio)"
-          value={
-            dso && dso.parcelas_consideradas > 0
-              ? `${dso.dso_dias} ${dso.dso_dias === 1 ? "dia" : "dias"}`
-              : "—"
-          }
-          sub={
-            dso && dso.parcelas_consideradas > 0
-              ? `Média dos últimos 180 dias · ${dso.parcelas_consideradas} pagamentos`
-              : "Sem dados suficientes"
-          }
-          accent={
-            dso && dso.dso_dias > 15
-              ? "warning"
-              : dso && dso.dso_dias > 0
-                ? "success"
-                : "muted"
-          }
-        />
-        <Kpi
-          label="Recebido este mês"
-          value={comparativo ? formatBRL(comparativo.mes_atual) : "—"}
-          sub={
-            comparativo
-              ? `Mês anterior: ${formatBRL(comparativo.mes_anterior)}`
-              : undefined
-          }
-          accent="success"
-        />
-        <Kpi
-          label="Variação MoM"
-          value={
-            variacao === null
-              ? "—"
-              : `${variacao >= 0 ? "+" : ""}${variacao.toFixed(1)}%`
-          }
-          sub={
-            variacao === null
-              ? "Precisa do mês anterior"
-              : variacao >= 0
-                ? "Crescimento vs mês anterior"
-                : "Queda vs mês anterior"
-          }
-          accent={
-            variacao === null
-              ? "muted"
-              : variacao >= 0
-                ? "success"
-                : "danger"
-          }
-        />
+      {/* Quantidade de cessões (contadores) */}
+      <section className="mt-4 rounded-xl border border-[var(--border)] bg-[var(--background-elevated)] p-5">
+        <header className="mb-3 flex items-end justify-between gap-2">
+          <div>
+            <p className="text-xs uppercase tracking-wide text-[var(--muted)]">
+              Quantidade de cessões
+            </p>
+            <p className="mt-0.5 text-xs text-[var(--muted)]/70">
+              Total de {cessoes.length} cessão
+              {cessoes.length === 1 ? "" : "ões"} cadastrada
+              {cessoes.length === 1 ? "" : "s"}
+            </p>
+          </div>
+          <Link
+            href="/dashboard/cessoes"
+            className="text-xs text-[var(--gold)] hover:underline"
+          >
+            Ver cessões →
+          </Link>
+        </header>
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <Contador
+            label="Ativas"
+            value={contadores.ativas}
+            href="/dashboard/cessoes?status=ativa"
+            accent="gold"
+          />
+          <Contador
+            label="Liquidadas"
+            value={contadores.pagas}
+            href="/dashboard/cessoes?filtro=liquidadas"
+            accent="success"
+          />
+          <Contador
+            label="Inadimplentes"
+            value={contadores.inadimplentes}
+            href="/dashboard/cessoes?status=inadimplente"
+            accent="danger"
+          />
+          <Contador
+            label="Canceladas"
+            value={contadores.canceladas}
+            href="/dashboard/cessoes?status=cancelada"
+            accent="muted"
+          />
+        </div>
       </section>
 
-      {/* Aging + gráficos */}
-      <section className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <FluxoMensalChart data={fluxo} />
-        </div>
-        <AgingBuckets data={aging} />
+      {/* Gráfico fluxo mensal (Aging removido a pedido do cliente) */}
+      <section className="mt-8">
+        <FluxoMensalChart data={fluxo} />
       </section>
 
       {/* Pizza cessões — geral (liquidadas vs a receber) + top 6 */}
@@ -245,94 +220,6 @@ export default async function DashboardPage() {
           data={topCessoes}
         />
       </section>
-
-      {/* Inadimplência destaque */}
-      {inadimplentes.length > 0 && (
-        <section className="mt-8 rounded-2xl border border-[var(--danger)]/40 bg-[var(--danger)]/10 p-6">
-          <header className="mb-4 flex flex-wrap items-end justify-between gap-2">
-            <div>
-              <p className="text-xs uppercase tracking-wide text-[var(--danger)]">
-                Atenção: parcelas em atraso
-              </p>
-              <h2 className="mt-1 text-xl font-semibold">
-                {inadimplentes.length} parcela
-                {inadimplentes.length === 1 ? "" : "s"} pendente
-                {inadimplentes.length === 1 ? "" : "s"} de cobrança
-              </h2>
-            </div>
-            <Link
-              href="/dashboard/pagamentos?filtro=atrasados"
-              className="text-xs text-[var(--gold)] hover:underline"
-            >
-              Ver todos →
-            </Link>
-          </header>
-
-          <div className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--background-elevated)]">
-            <table className="w-full text-sm">
-              <thead className="bg-black/30 text-left text-xs uppercase tracking-wide text-[var(--muted)]">
-                <tr>
-                  <th className="px-4 py-3 font-medium">Cliente</th>
-                  <th className="px-4 py-3 font-medium">Contrato</th>
-                  <th className="px-4 py-3 font-medium">Vencimento</th>
-                  <th className="px-4 py-3 text-right font-medium">Valor</th>
-                  <th className="px-4 py-3 text-right font-medium">
-                    Dias atraso
-                  </th>
-                  <th className="px-4 py-3"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {inadimplentes.slice(0, 5).map((i) => (
-                  <tr
-                    key={i.pagamento_id}
-                    className="border-t border-[var(--border)]"
-                  >
-                    <td className="px-4 py-3">
-                      <div className="font-medium">{i.cliente_nome}</div>
-                      <div className="font-mono text-xs text-[var(--muted)]">
-                        {formatDocumento(i.cliente_documento)}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 font-mono text-xs">
-                      {i.numero_contrato}
-                    </td>
-                    <td className="px-4 py-3">
-                      {formatDataBR(i.data_vencimento)}
-                    </td>
-                    <td className="px-4 py-3 text-right font-mono text-[var(--danger)]">
-                      {formatBRL(i.valor)}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <Badge variant="danger">{i.dias_atraso} d</Badge>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <Link
-                        href={`/dashboard/cessoes/${i.cessao_id}`}
-                        className="text-xs text-[var(--gold)] hover:underline"
-                      >
-                        Abrir
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-                {inadimplentes.length > 5 && (
-                  <tr className="border-t border-[var(--border)]">
-                    <td
-                      colSpan={6}
-                      className="px-4 py-3 text-center text-xs text-[var(--muted)]"
-                    >
-                      + {inadimplentes.length - 5} parcela
-                      {inadimplentes.length - 5 === 1 ? "" : "s"} adicional
-                      {inadimplentes.length - 5 === 1 ? "" : "is"}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      )}
 
       {/* Lista de cessões a receber — quitadas aparecem em "Sessoes Liquidadas" no topo */}
       <section className="mt-10">
@@ -417,36 +304,35 @@ function truncate(s: string, n: number): string {
   return s.length > n ? `${s.slice(0, n - 1)}…` : s;
 }
 
-function Kpi({
+function Contador({
   label,
   value,
-  sub,
-  accent = "muted",
+  href,
+  accent,
 }: {
   label: string;
-  value: string;
-  sub?: string;
-  accent?: "muted" | "gold" | "success" | "danger" | "warning";
+  value: number;
+  href: string;
+  accent: "gold" | "success" | "danger" | "muted";
 }) {
   const colorMap = {
-    muted: "text-foreground",
-    gold: "text-[var(--gold)]",
-    success: "text-[var(--success)]",
-    danger: "text-[var(--danger)]",
-    warning: "text-[var(--warning)]",
+    gold: "text-[var(--gold)] border-[var(--gold)]/30",
+    success: "text-[var(--success)] border-[var(--success)]/30",
+    danger: "text-[var(--danger)] border-[var(--danger)]/30",
+    muted: "text-[var(--muted)] border-[var(--border)]",
   };
   return (
-    <div className="rounded-xl border border-[var(--border)] bg-[var(--background-elevated)] p-5 transition-colors hover:border-[var(--gold)]/30">
-      <p className="text-xs uppercase tracking-wide text-[var(--muted)]">
+    <Link
+      href={href}
+      className={`rounded-lg border ${colorMap[accent]} bg-black/20 px-4 py-3 transition-colors hover:bg-black/40`}
+    >
+      <p className="text-[10px] uppercase tracking-wide text-[var(--muted)]">
         {label}
       </p>
-      <p className={`mt-2 text-2xl font-semibold ${colorMap[accent]}`}>
+      <p className={`mt-1 text-2xl font-semibold font-mono ${colorMap[accent].split(" ")[0]}`}>
         {value}
       </p>
-      {sub && (
-        <p className="mt-1 text-xs text-[var(--muted)]/70">{sub}</p>
-      )}
-    </div>
+    </Link>
   );
 }
 
@@ -480,24 +366,6 @@ function KpiAnimado({
         <p className="mt-1 text-xs text-[var(--muted)]/70">{sub}</p>
       )}
     </div>
-  );
-}
-
-function IconMoney() {
-  return (
-    <svg
-      width="22"
-      height="22"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="12" cy="12" r="9" />
-      <path d="M12 7v10M9 10h5a2 2 0 0 1 0 4h-4a2 2 0 0 0 0 4h5" />
-    </svg>
   );
 }
 

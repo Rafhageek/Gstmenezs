@@ -7,7 +7,7 @@ import { SearchInput } from "@/components/ui/search-input";
 import { SortableHeader } from "@/components/ui/sortable-header";
 import { Pagination } from "@/components/ui/pagination";
 import { formatDocumento, formatTelefone, digits } from "@/lib/format";
-import type { ClientePrincipal } from "@/types/database";
+import type { ClientePrincipal, InadimplenciaItem } from "@/types/database";
 
 export const metadata = {
   title: "Clientes Principais — Painel MNZ",
@@ -56,9 +56,15 @@ export default async function ClientesPage({
     }
   }
 
-  const { data, count, error } = await query
-    .range(offset, offset + PAGE_SIZE - 1)
-    .returns<ClientePrincipal[]>();
+  const [{ data, count, error }, inadRes] = await Promise.all([
+    query
+      .range(offset, offset + PAGE_SIZE - 1)
+      .returns<ClientePrincipal[]>(),
+    supabase
+      .from("v_inadimplencia")
+      .select("cliente_id, valor, dias_atraso")
+      .returns<Pick<InadimplenciaItem, "cliente_id" | "valor" | "dias_atraso">[]>(),
+  ]);
 
   if (error) {
     return (
@@ -71,6 +77,15 @@ export default async function ClientesPage({
 
   const clientes = data ?? [];
   const total = count ?? 0;
+
+  // Agrupa inadimplencias por cliente
+  const inadimplenciaPorCliente = new Map<string, { qtd: number; valor: number }>();
+  for (const i of inadRes.data ?? []) {
+    const atual = inadimplenciaPorCliente.get(i.cliente_id) ?? { qtd: 0, valor: 0 };
+    atual.qtd += 1;
+    atual.valor += Number(i.valor);
+    inadimplenciaPorCliente.set(i.cliente_id, atual);
+  }
 
   const baseQuery = new URLSearchParams();
   if (sp.q) baseQuery.set("q", sp.q);
@@ -108,10 +123,26 @@ export default async function ClientesPage({
           />,
           "",
         ]}
-        rows={clientes.map((c) => [
-          <span key="n" className="font-medium">
-            {c.nome}
-          </span>,
+        rows={clientes.map((c) => {
+          const inad = inadimplenciaPorCliente.get(c.id);
+          return [
+          <div key="n" className="flex items-center gap-2">
+            {inad && (
+              <span
+                className="inline-block h-2 w-2 animate-pulse rounded-full bg-[var(--danger)]"
+                title={`${inad.qtd} parcela(s) em atraso`}
+                aria-label="Cliente com cessão inadimplente"
+              />
+            )}
+            <div>
+              <div className="font-medium">{c.nome}</div>
+              {inad && (
+                <div className="text-[10px] text-[var(--danger)]">
+                  ⚠ {inad.qtd} parcela{inad.qtd === 1 ? "" : "s"} em atraso
+                </div>
+              )}
+            </div>
+          </div>,
           <span key="d" className="font-mono text-xs">
             {formatDocumento(c.documento)}
           </span>,
@@ -156,7 +187,8 @@ export default async function ClientesPage({
               Editar
             </Link>
           </div>,
-        ])}
+        ];
+        })}
       />
 
       <Pagination

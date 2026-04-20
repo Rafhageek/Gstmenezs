@@ -55,6 +55,12 @@ export default async function ClienteDetalhesPage({ params }: Props) {
   const extrato = extratoRes.data;
   const listaCessoes = cessoes ?? [];
 
+  // Conta parcelas em atraso pra esse cliente
+  const { count: parcelasAtrasadas } = await supabase
+    .from("v_inadimplencia")
+    .select("pagamento_id", { count: "exact", head: true })
+    .eq("cliente_id", id);
+
   return (
     <div>
       <PageHeader
@@ -63,7 +69,31 @@ export default async function ClienteDetalhesPage({ params }: Props) {
         descricao={formatDocumento(cliente.documento)}
       />
 
-      <div className="-mt-6 mb-8 flex flex-wrap gap-3">
+      {parcelasAtrasadas != null && parcelasAtrasadas > 0 && (
+        <div
+          role="alert"
+          className="mb-6 flex items-center gap-3 rounded-xl border border-[var(--danger)]/50 bg-[var(--danger)]/10 px-5 py-3"
+        >
+          <span className="inline-block h-3 w-3 animate-pulse rounded-full bg-[var(--danger)]" />
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-[var(--danger)]">
+              ⚠ Cliente com inadimplência
+            </p>
+            <p className="text-xs text-[var(--muted)]">
+              {parcelasAtrasadas} parcela{parcelasAtrasadas === 1 ? "" : "s"} em atraso
+              no total das cessões deste cliente.
+            </p>
+          </div>
+          <Link
+            href={`/dashboard/pagamentos?filtro=atrasados&cliente=${cliente.id}`}
+            className="text-xs text-[var(--gold)] hover:underline"
+          >
+            Ver parcelas →
+          </Link>
+        </div>
+      )}
+
+      <div className="-mt-2 mb-8 flex flex-wrap gap-3">
         <Link
           href={`/dashboard/clientes/${cliente.id}/editar`}
           className="inline-flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--background-elevated)] px-4 py-2 text-xs font-semibold hover:border-[var(--gold)]"

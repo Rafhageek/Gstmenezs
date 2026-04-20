@@ -1,7 +1,6 @@
 "use client";
 
 import { AnimatedCounter } from "@/components/ui/animated-counter";
-import { formatBRL } from "@/lib/format";
 
 interface Props {
   label: string;
@@ -42,7 +41,7 @@ export function KpiPrimary({ label, value, variacao, sub, icon }: Props) {
           <p className="mt-3 text-3xl font-bold tracking-tight md:text-4xl">
             <AnimatedCounter
               value={value}
-              format={formatBRL}
+              format="brl"
               className="font-mono"
             />
           </p>

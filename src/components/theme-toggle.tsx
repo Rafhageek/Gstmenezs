@@ -22,10 +22,8 @@ export function ThemeToggle() {
       if (stored === "light" || stored === "dark") {
         setTheme(stored);
       } else {
-        // Detecta preferência do sistema como fallback
-        const prefersDark =
-          window.matchMedia("(prefers-color-scheme: dark)").matches;
-        setTheme(prefersDark ? "dark" : "light");
+        // Dark é o padrão do Painel MNZ (identidade jurídica)
+        setTheme("dark");
       }
     } catch {
       /* ignore */

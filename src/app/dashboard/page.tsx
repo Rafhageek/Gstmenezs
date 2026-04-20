@@ -432,7 +432,7 @@ function KpiAnimado({
         {label}
       </p>
       <p className={`mt-2 text-2xl font-semibold ${colorMap[accent]}`}>
-        <AnimatedCounter value={value} format={formatBRL} className="font-mono" />
+        <AnimatedCounter value={value} format="brl" className="font-mono" />
       </p>
       {sub && (
         <p className="mt-1 text-xs text-[var(--muted)]/70">{sub}</p>

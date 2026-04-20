@@ -1,25 +1,31 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { formatBRL } from "@/lib/format";
+
+type Formato = "brl" | "number" | "percent";
 
 interface Props {
   /** Valor final (pode ser negativo). */
   value: number;
   /** Duração da animação em ms. */
   duration?: number;
-  /** Função para formatar o número em cada tick (ex.: formatBRL). */
-  format: (n: number) => string;
+  /** Formato do display. */
+  format?: Formato;
   className?: string;
 }
 
 /**
  * Conta de 0 até `value` em `duration`ms usando easing ease-out-cubic.
  * Respeita prefers-reduced-motion.
+ *
+ * Recebe o formato como string (não função) para ser compatível com
+ * Server Components que passam props serializáveis.
  */
 export function AnimatedCounter({
   value,
   duration = 700,
-  format,
+  format = "brl",
   className = "",
 }: Props) {
   const [display, setDisplay] = useState(value);
@@ -63,5 +69,13 @@ export function AnimatedCounter({
     };
   }, [value, duration]);
 
-  return <span className={className}>{format(display)}</span>;
+  return <span className={className}>{formatValue(display, format)}</span>;
+}
+
+function formatValue(v: number, format: Formato): string {
+  if (format === "brl") return formatBRL(v);
+  if (format === "percent") return `${v.toFixed(1)}%`;
+  return new Intl.NumberFormat("pt-BR", {
+    maximumFractionDigits: 0,
+  }).format(v);
 }

@@ -170,6 +170,12 @@ export function UserMenu({ nome, email, role }: Props) {
                   label="Configurações"
                   onClick={() => setOpen(false)}
                 />
+                <MenuLink
+                  href="/dashboard/admin/demo"
+                  icon={<FileIcon />}
+                  label="Dados demo"
+                  onClick={() => setOpen(false)}
+                />
               </>
             )}
           </nav>

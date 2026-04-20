@@ -33,6 +33,7 @@ export default async function AdminLayout({
         <AdminTab href="/dashboard/admin/importar">Importar CSV</AdminTab>
         <AdminTab href="/dashboard/admin/logs">Logs de auditoria</AdminTab>
         <AdminTab href="/dashboard/admin/configuracoes">Configurações</AdminTab>
+        <AdminTab href="/dashboard/admin/demo">Dados demo</AdminTab>
       </nav>
       {children}
     </div>

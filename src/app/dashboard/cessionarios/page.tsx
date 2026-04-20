@@ -80,7 +80,6 @@ export default async function CessionariosPage({
   return (
     <div>
       <PageHeader
-        eyebrow="Cadastros"
         titulo="Cessionários"
         descricao="Recebedores das cessões de crédito."
         acao={{
@@ -95,23 +94,22 @@ export default async function CessionariosPage({
 
       <DataTable
         headers={[
-          "Tipo",
+          "Nº",
           <SortableHeader key="nome" label="Nome" column="nome" />,
           <SortableHeader key="doc" label="CPF/CNPJ" column="documento" />,
           "Data contrato",
-          "Valor contratado",
           "Valor cessão",
-          "%",
+          "% Cedida",
           "Status",
           "",
         ]}
-        rows={cessionarios.map((c) => [
-          <Badge
-            key="tp"
-            variant={c.tipo_pessoa === "PF" ? "neutral" : "gold"}
+        rows={cessionarios.map((c, idx) => [
+          <span
+            key="num"
+            className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[var(--gold)]/30 bg-[var(--gold)]/10 font-mono text-xs font-semibold text-[var(--gold)]"
           >
-            {c.tipo_pessoa ?? "PJ"}
-          </Badge>,
+            {String(offset + idx + 1).padStart(2, "0")}
+          </span>,
           <div key="n">
             <div className="font-medium">{c.nome}</div>
             <div className="text-[11px] text-[var(--muted)]">
@@ -123,9 +121,6 @@ export default async function CessionariosPage({
           </span>,
           <span key="dc" className="text-xs text-[var(--muted)]">
             {c.data_contrato ? formatDataBR(c.data_contrato) : "—"}
-          </span>,
-          <span key="vc" className="font-mono text-xs">
-            {c.valor_contratado != null ? formatBRL(c.valor_contratado) : "—"}
           </span>,
           <span key="vce" className="font-mono text-xs text-[var(--gold)]">
             {c.valor_cessao != null ? formatBRL(c.valor_cessao) : "—"}

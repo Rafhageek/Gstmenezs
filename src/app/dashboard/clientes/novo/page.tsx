@@ -9,7 +9,7 @@ export default function NovoClientePage() {
   return (
     <div>
       <PageHeader
-        eyebrow="Cadastros"
+        eyebrow="Clientes"
         titulo="Novo cliente principal"
         descricao="Cadastre um novo cedente do crédito."
       />

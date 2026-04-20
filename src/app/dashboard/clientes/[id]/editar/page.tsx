@@ -26,7 +26,7 @@ export default async function EditarClientePage({ params }: Props) {
   return (
     <div>
       <PageHeader
-        eyebrow="Cadastros"
+        eyebrow="Clientes"
         titulo={`Editar: ${cliente.nome}`}
         descricao="Atualize os dados do cliente principal."
       />

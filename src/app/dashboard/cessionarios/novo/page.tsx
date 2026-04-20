@@ -9,7 +9,7 @@ export default function NovoCessionarioPage() {
   return (
     <div>
       <PageHeader
-        eyebrow="Cadastros"
+        eyebrow="Clientes · Cessionários"
         titulo="Novo cessionário"
         descricao="Cadastre um novo recebedor de cessão de crédito."
       />

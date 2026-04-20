@@ -69,7 +69,7 @@ export default async function ClientesPage({
   if (error) {
     return (
       <div>
-        <PageHeader eyebrow="Cadastros" titulo="Clientes Principais" />
+        <PageHeader titulo="Clientes Principais" />
         <p className="text-sm text-[var(--danger)]">Erro: {error.message}</p>
       </div>
     );
@@ -95,7 +95,6 @@ export default async function ClientesPage({
   return (
     <div>
       <PageHeader
-        eyebrow="Cadastros"
         titulo="Clientes Principais"
         descricao="Cedentes do crédito (titulares dos recebíveis)."
         acao={{ label: "+ Novo cliente", href: "/dashboard/clientes/novo" }}

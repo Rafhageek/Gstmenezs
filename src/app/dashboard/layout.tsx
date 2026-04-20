@@ -103,7 +103,21 @@ export default async function DashboardLayout({
               Visão geral
             </NavLink>
 
-            <NavLink href="/dashboard/cessionarios">Cessionários</NavLink>
+            <NavDropdown
+              label="Clientes"
+              items={[
+                {
+                  href: "/dashboard/clientes",
+                  label: "Clientes",
+                  descricao: "Cedentes do crédito",
+                },
+                {
+                  href: "/dashboard/cessionarios",
+                  label: "Cessionários",
+                  descricao: "Recebedores das cessões",
+                },
+              ]}
+            />
 
             <NavDropdown
               label="Operação"
@@ -122,11 +136,6 @@ export default async function DashboardLayout({
                   href: "/dashboard/agenda",
                   label: "Agenda",
                   descricao: "Vencimentos do mês",
-                },
-                {
-                  href: "/dashboard/clientes",
-                  label: "Clientes principais",
-                  descricao: "Cedentes do crédito",
                 },
               ]}
             />

@@ -26,7 +26,7 @@ export default async function EditarCessionarioPage({ params }: Props) {
   return (
     <div>
       <PageHeader
-        eyebrow="Cadastros"
+        eyebrow="Clientes · Cessionários"
         titulo={`Editar: ${cessionario.nome}`}
         descricao="Atualize os dados do cessionário."
       />

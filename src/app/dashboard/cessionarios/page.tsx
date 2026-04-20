@@ -63,7 +63,7 @@ export default async function CessionariosPage({
   if (error) {
     return (
       <div>
-        <PageHeader eyebrow="Cadastros" titulo="Cessionários" />
+        <PageHeader titulo="Cessionários" />
         <p className="text-sm text-[var(--danger)]">Erro: {error.message}</p>
       </div>
     );

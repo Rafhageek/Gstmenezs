@@ -11,7 +11,8 @@
 -- ============================================================
 
 -- ------------------------------------------------------------
--- Normalizar: usa extensions.unaccent qualificado
+-- Normalizar: translate() nativo (sem depender de extensao unaccent)
+-- Substitui caracteres acentuados por ASCII equivalentes.
 -- ------------------------------------------------------------
 
 create or replace function public.normalizar_resposta_seguranca(p_texto text)
@@ -21,7 +22,13 @@ immutable
 set search_path = public, extensions, pg_temp
 as $$
   select regexp_replace(
-    lower(extensions.unaccent(trim(p_texto))),
+    lower(
+      translate(
+        trim(p_texto),
+        'áàâãäÁÀÂÃÄéèêëÉÈÊËíìîïÍÌÎÏóòôõöÓÒÔÕÖúùûüÚÙÛÜçÇñÑýÿÝ',
+        'aaaaaAAAAAeeeeEEEEiiiiIIIIoooooOOOOOuuuuUUUUcCnNyyY'
+      )
+    ),
     '\s+', '', 'g'
   );
 $$;

@@ -5,6 +5,7 @@ import { DataTable } from "@/components/ui/data-table";
 import { Badge } from "@/components/ui/feedback";
 import { SearchInput } from "@/components/ui/search-input";
 import { SortableHeader } from "@/components/ui/sortable-header";
+import { DateRangeFilter } from "@/components/ui/date-range-filter";
 import { Pagination } from "@/components/ui/pagination";
 import { formatBRL, formatDataBR, formatDocumento, formatTelefone, digits } from "@/lib/format";
 import type { Cessionario } from "@/types/database";
@@ -14,10 +15,20 @@ export const metadata = {
 };
 
 const PAGE_SIZE = 20;
-const COLUNAS_ORDENAVEIS = ["nome", "documento", "created_at"] as const;
+const COLUNAS_ORDENAVEIS = [
+  "nome",
+  "documento",
+  "data_contrato",
+  "valor_cessao",
+  "percentual",
+  "created_at",
+] as const;
 
 interface SearchParams {
   q?: string;
+  de?: string;
+  ate?: string;
+  status?: string;
   sort?: string;
   dir?: string;
   page?: string;
@@ -43,7 +54,7 @@ export default async function CessionariosPage({
   let query = supabase
     .from("cessionarios")
     .select("*", { count: "exact" })
-    .order(sort, { ascending });
+    .order(sort, { ascending, nullsFirst: false });
 
   if (sp.q) {
     const onlyDigits = digits(sp.q);
@@ -55,6 +66,18 @@ export default async function CessionariosPage({
       query = query.ilike("nome", `%${sp.q}%`);
     }
   }
+
+  // Filtro por data_contrato (desde / até)
+  if (sp.de) {
+    query = query.gte("data_contrato", sp.de);
+  }
+  if (sp.ate) {
+    query = query.lte("data_contrato", sp.ate);
+  }
+
+  // Filtro por status ativo/inativo
+  if (sp.status === "ativo") query = query.eq("ativo", true);
+  if (sp.status === "inativo") query = query.eq("ativo", false);
 
   const { data, count, error } = await query
     .range(offset, offset + PAGE_SIZE - 1)
@@ -74,6 +97,9 @@ export default async function CessionariosPage({
 
   const baseQuery = new URLSearchParams();
   if (sp.q) baseQuery.set("q", sp.q);
+  if (sp.de) baseQuery.set("de", sp.de);
+  if (sp.ate) baseQuery.set("ate", sp.ate);
+  if (sp.status) baseQuery.set("status", sp.status);
   if (sp.sort) baseQuery.set("sort", sp.sort);
   if (sp.dir) baseQuery.set("dir", sp.dir);
 
@@ -88,8 +114,12 @@ export default async function CessionariosPage({
         }}
       />
 
-      <div className="mb-4">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <SearchInput placeholder="Buscar por nome ou CPF/CNPJ..." />
+        <div className="flex flex-wrap items-center gap-3">
+          <DateRangeFilter labelDe="Contrato de" labelAte="até" />
+          <StatusTabs current={sp.status} baseParams={baseQuery.toString()} />
+        </div>
       </div>
 
       <DataTable
@@ -97,9 +127,21 @@ export default async function CessionariosPage({
           "Nº",
           <SortableHeader key="nome" label="Nome" column="nome" />,
           <SortableHeader key="doc" label="CPF/CNPJ" column="documento" />,
-          "Data contrato",
-          "Valor cessão",
-          "% Cedida",
+          <SortableHeader
+            key="dc"
+            label="Data contrato"
+            column="data_contrato"
+          />,
+          <SortableHeader
+            key="vc"
+            label="Valor cessão"
+            column="valor_cessao"
+          />,
+          <SortableHeader
+            key="pc"
+            label="% Cedida"
+            column="percentual"
+          />,
           "Status",
           "",
         ]}
@@ -163,5 +205,49 @@ export default async function CessionariosPage({
         baseQuery={baseQuery.toString()}
       />
     </div>
+  );
+}
+
+function StatusTabs({
+  current,
+  baseParams,
+}: {
+  current?: string;
+  baseParams: string;
+}) {
+  const opcoes = [
+    { value: undefined, label: "Todos" },
+    { value: "ativo", label: "Ativos" },
+    { value: "inativo", label: "Inativos" },
+  ];
+
+  function hrefFor(valor?: string) {
+    const params = new URLSearchParams(baseParams);
+    if (valor) params.set("status", valor);
+    else params.delete("status");
+    params.delete("page");
+    const qs = params.toString();
+    return qs ? `?${qs}` : "/dashboard/cessionarios";
+  }
+
+  return (
+    <nav className="flex gap-1 rounded-full border border-[var(--border)] bg-black/20 p-1">
+      {opcoes.map((o) => {
+        const active = (current ?? "") === (o.value ?? "");
+        return (
+          <Link
+            key={o.label}
+            href={hrefFor(o.value)}
+            className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+              active
+                ? "bg-[var(--gold)] text-[var(--background)]"
+                : "text-[var(--muted)] hover:text-foreground"
+            }`}
+          >
+            {o.label}
+          </Link>
+        );
+      })}
+    </nav>
   );
 }

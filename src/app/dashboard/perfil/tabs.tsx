@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 const TABS = [
   { href: "/dashboard/perfil", label: "Dados pessoais", exact: true },
   { href: "/dashboard/perfil/conta", label: "E-mail e senha" },
+  { href: "/dashboard/perfil/seguranca", label: "Segurança 2FA" },
   { href: "/dashboard/perfil/biometria", label: "Biometria" },
 ];
 

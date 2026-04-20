@@ -31,9 +31,8 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Rotas protegidas: redireciona para /login se não autenticado.
-  // Ajuste a lista conforme expandirmos as áreas privadas.
   const path = request.nextUrl.pathname;
+
   const isAuthRoute =
     path.startsWith("/login") ||
     path.startsWith("/auth") ||
@@ -45,21 +44,41 @@ export async function updateSession(request: NextRequest) {
 
   const isPublicRoute = path === "/";
 
+  // Rotas da etapa 2FA (acessíveis durante o fluxo pós-login)
+  const is2faRoute =
+    path === "/verificacao-2fa" ||
+    path.startsWith("/api/") ||
+    path === "/auth/sign-out";
+
   // Rotas que nunca disparam lock biométrico
   const isUnlockRoute =
     path === "/desbloquear" ||
     path === "/bem-vindo" ||
+    path === "/verificacao-2fa" ||
     path.startsWith("/api/auth/passkey") ||
     path === "/auth/sign-out";
 
+  // Não autenticado → redireciona pra login (exceto rotas públicas)
   if (!user && !isAuthRoute && !isPublicRoute && !isPortalRoute) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
 
+  // Autenticado mas com 2FA pendente → só pode ficar em /verificacao-2fa
+  if (user) {
+    const pending2fa =
+      !!request.cookies.get("mnz_2fa_pending")?.value &&
+      !request.cookies.get("mnz_unlock_at")?.value;
+
+    if (pending2fa && !is2faRoute && !isPublicRoute) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/verificacao-2fa";
+      return NextResponse.redirect(url);
+    }
+  }
+
   // Lock biométrico: cookie "mnz_unlock_at" existe = desbloqueado.
-  // Sua validade é controlada pelo maxAge do cookie (12h).
   if (user && path.startsWith("/dashboard") && !isUnlockRoute) {
     const precisaDesbloquear = !request.cookies.get("mnz_unlock_at")?.value;
     if (precisaDesbloquear) {

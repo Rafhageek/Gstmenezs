@@ -126,6 +126,12 @@ export function UserMenu({ nome, email, role }: Props) {
               onClick={() => setOpen(false)}
             />
             <MenuLink
+              href="/dashboard/perfil/seguranca"
+              icon={<ShieldIcon />}
+              label="Segurança 2FA"
+              onClick={() => setOpen(false)}
+            />
+            <MenuLink
               href="/dashboard/perfil/biometria"
               icon={<LockIcon />}
               label="Biometria"
@@ -274,6 +280,23 @@ function KeyIcon() {
       strokeLinejoin="round"
     >
       <path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4" />
+    </svg>
+  );
+}
+
+function ShieldIcon() {
+  return (
+    <svg
+      {...iconSize}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+      <path d="m9 12 2 2 4-4" />
     </svg>
   );
 }

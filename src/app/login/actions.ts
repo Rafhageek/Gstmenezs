@@ -5,20 +5,23 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 
-const UNLOCK_COOKIE = "mnz_unlock_at";
-const UNLOCK_DURATION_HOURS = 12;
+const PENDING_COOKIE = "mnz_2fa_pending";
+const PENDING_DURATION_MIN = 15;
 
-async function setarUnlockAt() {
+async function setarPending2fa() {
   const cookieStore = await cookies();
   cookieStore.set({
-    name: UNLOCK_COOKIE,
+    name: PENDING_COOKIE,
     value: "1",
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
     path: "/",
-    maxAge: UNLOCK_DURATION_HOURS * 60 * 60,
+    maxAge: PENDING_DURATION_MIN * 60,
   });
+  // Garante que não há unlock ativo — 2FA precisa ser concluído primeiro
+  cookieStore.delete("mnz_unlock_at");
+  cookieStore.delete("mnz_2fa_tentativas");
 }
 
 export interface AuthFormState {
@@ -46,11 +49,11 @@ export async function signIn(
     return { error: traduzirErroAuth(error.message) };
   }
 
-  // Login fresh com senha concede unlock imediato (12h).
-  await setarUnlockAt();
+  // Sessão Supabase criada. Agora exige 2FA antes de liberar o sistema.
+  await setarPending2fa();
 
   revalidatePath("/", "layout");
-  redirect("/bem-vindo");
+  redirect("/verificacao-2fa");
 }
 
 export async function signUp(

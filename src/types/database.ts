@@ -22,6 +22,10 @@ export interface Profile {
   ativo: boolean;
   created_at: string;
   updated_at: string;
+  /** Pergunta de segurança (2FA). */
+  pergunta_seguranca: string | null;
+  /** Hash bcrypt da resposta. Nunca exposto ao client. */
+  resposta_seguranca_hash: string | null;
 }
 
 export interface Endereco {

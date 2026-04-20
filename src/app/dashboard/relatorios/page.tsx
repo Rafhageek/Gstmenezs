@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/feedback";
+import { WhatsAppShareButton } from "@/components/whatsapp-share-button";
 import { formatBRL, formatDocumento } from "@/lib/format";
 import type {
   CessaoResumo,
@@ -85,14 +86,21 @@ export default async function RelatoriosPage() {
                 {formatBRL(totalInadimplencia)}
               </p>
             </div>
-            <a
-              href="/api/relatorios/inadimplencia"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded-lg bg-[var(--gold)] px-4 py-2 text-xs font-semibold text-[var(--background)] transition-colors hover:bg-[var(--gold-hover)]"
-            >
-              ⬇ Gerar PDF
-            </a>
+            <div className="flex flex-wrap gap-2">
+              <a
+                href="/api/relatorios/inadimplencia"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-lg bg-[var(--gold)] px-4 py-2 text-xs font-semibold text-[var(--background)] transition-colors hover:bg-[var(--gold-hover)]"
+              >
+                ⬇ Gerar PDF
+              </a>
+              <WhatsAppShareButton
+                pdfUrl="/api/relatorios/inadimplencia"
+                filename={`inadimplencia-${new Date().toISOString().slice(0, 10)}.pdf`}
+                mensagem={`Segue o relatório de inadimplência consolidado.\n\nAtenciosamente, Menezes Advocacia.`}
+              />
+            </div>
           </div>
         </div>
 
@@ -173,14 +181,23 @@ export default async function RelatoriosPage() {
                     {formatDocumento(c.documento)}
                   </p>
                 </div>
-                <a
-                  href={`/api/relatorios/extrato-cliente/${c.id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="shrink-0 text-xs text-[var(--gold)] hover:underline"
-                >
-                  PDF →
-                </a>
+                <div className="flex shrink-0 items-center gap-2">
+                  <a
+                    href={`/api/relatorios/extrato-cliente/${c.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-[var(--gold)] hover:underline"
+                  >
+                    PDF
+                  </a>
+                  <WhatsAppShareButton
+                    pdfUrl={`/api/relatorios/extrato-cliente/${c.id}`}
+                    filename={`extrato-${c.nome.replace(/\s+/g, "-").toLowerCase()}.pdf`}
+                    mensagem={`Prezado(a) ${c.nome}, segue o seu extrato consolidado.\n\nAtenciosamente, Menezes Advocacia.`}
+                    size="sm"
+                    label=""
+                  />
+                </div>
               </li>
             ))}
           </ul>

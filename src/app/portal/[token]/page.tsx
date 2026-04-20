@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getConfiguracoes } from "@/lib/configuracoes";
 import { BrandLogo } from "@/components/brand-logo";
 import { Badge } from "@/components/ui/feedback";
+import { WhatsAppShareButton } from "@/components/whatsapp-share-button";
 import {
   formatBRL,
   formatDataBR,
@@ -151,6 +152,11 @@ export default async function PortalPage({ params }: Props) {
           >
             ⬇ Extrato consolidado PDF
           </a>
+          <WhatsAppShareButton
+            pdfUrl={`/api/portal/${token}/pdf/extrato`}
+            filename={`extrato-${cliente.nome.replace(/\s+/g, "-").toLowerCase()}.pdf`}
+            mensagem={`Extrato consolidado do cliente ${cliente.nome}.`}
+          />
         </section>
 
         <section className="mb-10">

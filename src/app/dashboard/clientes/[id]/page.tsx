@@ -4,10 +4,12 @@ import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/ui/page-header";
 import { DataTable } from "@/components/ui/data-table";
 import { Badge } from "@/components/ui/feedback";
+import { WhatsAppShareButton } from "@/components/whatsapp-share-button";
 import {
   formatBRL,
   formatDocumento,
   formatTelefone,
+  digits,
 } from "@/lib/format";
 import type {
   ClientePrincipal,
@@ -76,6 +78,12 @@ export default async function ClienteDetalhesPage({ params }: Props) {
         >
           ⬇ Extrato PDF
         </a>
+        <WhatsAppShareButton
+          pdfUrl={`/api/relatorios/extrato-cliente/${cliente.id}`}
+          filename={`extrato-${cliente.nome.replace(/\s+/g, "-").toLowerCase()}.pdf`}
+          mensagem={`Prezado(a) ${cliente.nome}, segue o seu extrato consolidado.\n\nAtenciosamente, Menezes Advocacia.`}
+          telefone={prepararTelWa(cliente.telefone)}
+        />
       </div>
 
       {extrato && (
@@ -232,6 +240,13 @@ function StatusBadgeView({
     cancelada: <Badge variant="neutral">Cancelada</Badge>,
   };
   return map[status];
+}
+
+function prepararTelWa(raw: string | null | undefined): string | undefined {
+  if (!raw) return undefined;
+  const d = digits(raw);
+  if (d.length !== 10 && d.length !== 11) return undefined;
+  return `55${d}`;
 }
 
 function formatarEndereco(

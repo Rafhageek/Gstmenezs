@@ -14,6 +14,8 @@ import {
 import { CancelarCessaoButton } from "./cancelar-cessao-button";
 import { CessaoTimeline } from "./cessao-timeline";
 import { CelebracaoQuitacao } from "./celebracao-quitacao";
+import { WhatsAppShareButton } from "@/components/whatsapp-share-button";
+import { digits } from "@/lib/format";
 import type {
   CessaoCredito,
   ClientePrincipal,
@@ -31,8 +33,14 @@ interface Props {
 }
 
 interface CessaoFull extends CessaoCredito {
-  cliente_principal: Pick<ClientePrincipal, "id" | "nome" | "documento">;
-  cessionario: Pick<Cessionario, "id" | "nome" | "documento">;
+  cliente_principal: Pick<
+    ClientePrincipal,
+    "id" | "nome" | "documento" | "telefone"
+  >;
+  cessionario: Pick<
+    Cessionario,
+    "id" | "nome" | "documento" | "telefone"
+  >;
 }
 
 export default async function CessaoDetalhesPage({ params }: Props) {
@@ -44,7 +52,7 @@ export default async function CessaoDetalhesPage({ params }: Props) {
       supabase
         .from("cessoes_credito")
         .select(
-          `*, cliente_principal:clientes_principais(id,nome,documento), cessionario:cessionarios(id,nome,documento)`,
+          `*, cliente_principal:clientes_principais(id,nome,documento,telefone), cessionario:cessionarios(id,nome,documento,telefone)`,
         )
         .eq("id", id)
         .single<CessaoFull>(),
@@ -99,6 +107,12 @@ export default async function CessaoDetalhesPage({ params }: Props) {
         >
           ⬇ Imprimir PDF
         </a>
+        <WhatsAppShareButton
+          pdfUrl={`/api/relatorios/cessao/${cessao.id}`}
+          filename={`cessao-${cessao.numero_contrato.replace(/\//g, "-")}.pdf`}
+          mensagem={`Segue o relatório da cessão ${cessao.numero_contrato} (${cessao.cliente_principal.nome}).\n\nAtenciosamente, Menezes Advocacia.`}
+          telefone={prepararTelefone(cessao.cliente_principal.telefone)}
+        />
         {cessao.status !== "cancelada" && cessao.status !== "quitada" && (
           <CancelarCessaoButton
             cessaoId={cessao.id}
@@ -226,6 +240,17 @@ export default async function CessaoDetalhesPage({ params }: Props) {
       )}
     </div>
   );
+}
+
+/**
+ * Normaliza telefone BR para uso em wa.me: só dígitos, prefixo 55.
+ * Retorna undefined se o telefone não tiver 10 ou 11 dígitos.
+ */
+function prepararTelefone(raw: string | null | undefined): string | undefined {
+  if (!raw) return undefined;
+  const d = digits(raw);
+  if (d.length !== 10 && d.length !== 11) return undefined;
+  return `55${d}`;
 }
 
 function Kpi({

@@ -60,7 +60,10 @@ export async function verificar2fa(
   );
 
   if (rpcError) {
-    return { error: "Erro ao verificar. Tente novamente." };
+    console.error("[2fa] rpc error:", rpcError);
+    return {
+      error: `Erro ao verificar: ${rpcError.message ?? "desconhecido"}`,
+    };
   }
 
   if (ok === true) {

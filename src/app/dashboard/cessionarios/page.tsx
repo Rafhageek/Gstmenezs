@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/feedback";
 import { SearchInput } from "@/components/ui/search-input";
 import { SortableHeader } from "@/components/ui/sortable-header";
 import { Pagination } from "@/components/ui/pagination";
-import { formatDocumento, formatTelefone, digits } from "@/lib/format";
+import { formatBRL, formatDataBR, formatDocumento, formatTelefone, digits } from "@/lib/format";
 import type { Cessionario } from "@/types/database";
 
 export const metadata = {
@@ -95,25 +95,43 @@ export default async function CessionariosPage({
 
       <DataTable
         headers={[
+          "Tipo",
           <SortableHeader key="nome" label="Nome" column="nome" />,
           <SortableHeader key="doc" label="CPF/CNPJ" column="documento" />,
-          "Telefone",
-          "Banco",
+          "Data contrato",
+          "Valor contratado",
+          "Valor cessão",
+          "%",
           "Status",
           "",
         ]}
         rows={cessionarios.map((c) => [
-          <span key="n" className="font-medium">
-            {c.nome}
-          </span>,
+          <Badge
+            key="tp"
+            variant={c.tipo_pessoa === "PF" ? "neutral" : "gold"}
+          >
+            {c.tipo_pessoa ?? "PJ"}
+          </Badge>,
+          <div key="n">
+            <div className="font-medium">{c.nome}</div>
+            <div className="text-[11px] text-[var(--muted)]">
+              {formatTelefone(c.telefone) || "sem telefone"}
+            </div>
+          </div>,
           <span key="d" className="font-mono text-xs">
             {formatDocumento(c.documento)}
           </span>,
-          <span key="t" className="text-[var(--muted)]">
-            {formatTelefone(c.telefone) || "—"}
+          <span key="dc" className="text-xs text-[var(--muted)]">
+            {c.data_contrato ? formatDataBR(c.data_contrato) : "—"}
           </span>,
-          <span key="b" className="text-[var(--muted)]">
-            {c.banco?.banco || "—"}
+          <span key="vc" className="font-mono text-xs">
+            {c.valor_contratado != null ? formatBRL(c.valor_contratado) : "—"}
+          </span>,
+          <span key="vce" className="font-mono text-xs text-[var(--gold)]">
+            {c.valor_cessao != null ? formatBRL(c.valor_cessao) : "—"}
+          </span>,
+          <span key="pc" className="font-mono text-xs">
+            {c.percentual != null ? `${c.percentual}%` : "—"}
           </span>,
           c.ativo ? (
             <Badge key="s" variant="success">

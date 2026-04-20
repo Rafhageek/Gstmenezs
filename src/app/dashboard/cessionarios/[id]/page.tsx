@@ -82,12 +82,56 @@ export default async function CessionarioDetalhesPage({ params }: Props) {
         <Kpi label="Cessões" value={String(lista.length)} />
       </section>
 
-      <section className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2">
-        <InfoCard titulo="Contato">
+      <section className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-3">
+        <InfoCard titulo="Identificação">
+          <Info
+            label="Tipo"
+            value={
+              cessionario.tipo_pessoa === "PF"
+                ? "Pessoa Física"
+                : "Pessoa Jurídica"
+            }
+          />
           <Info label="E-mail" value={cessionario.email ?? ""} />
           <Info
             label="Telefone"
             value={formatTelefone(cessionario.telefone)}
+          />
+        </InfoCard>
+        <InfoCard titulo="Dados do contrato">
+          <Info
+            label="Data do contrato"
+            value={
+              cessionario.data_contrato
+                ? new Date(cessionario.data_contrato).toLocaleDateString(
+                    "pt-BR",
+                  )
+                : ""
+            }
+          />
+          <Info
+            label="Valor contratado"
+            value={
+              cessionario.valor_contratado != null
+                ? formatBRL(cessionario.valor_contratado)
+                : ""
+            }
+          />
+          <Info
+            label="Valor da cessão"
+            value={
+              cessionario.valor_cessao != null
+                ? formatBRL(cessionario.valor_cessao)
+                : ""
+            }
+          />
+          <Info
+            label="Percentual"
+            value={
+              cessionario.percentual != null
+                ? `${cessionario.percentual}%`
+                : ""
+            }
           />
         </InfoCard>
         <InfoCard titulo="Dados bancários (repasse)">
@@ -212,11 +256,11 @@ function StatusBadgeView({
   atrasado: boolean;
 }) {
   if (atrasado && status === "ativa") {
-    return <Badge variant="danger">Em atraso</Badge>;
+    return <Badge variant="warning">A receber (vencida)</Badge>;
   }
   const map: Record<CessaoResumo["status"], React.ReactNode> = {
-    ativa: <Badge variant="gold">Ativa</Badge>,
-    quitada: <Badge variant="success">Quitada</Badge>,
+    ativa: <Badge variant="gold">A receber</Badge>,
+    quitada: <Badge variant="success">Liquidada</Badge>,
     inadimplente: <Badge variant="danger">Inadimplente</Badge>,
     cancelada: <Badge variant="neutral">Cancelada</Badge>,
   };

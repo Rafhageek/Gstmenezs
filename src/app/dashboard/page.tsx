@@ -6,6 +6,7 @@ import { CessoesPizzaChart } from "@/components/charts/cessoes-pizza-chart";
 import { CessaoProgressoPizza } from "@/components/charts/cessao-progresso-pizza";
 import { AgingBuckets } from "@/components/dashboard/aging-buckets";
 import { KpiPrimary } from "@/components/dashboard/kpi-primary";
+import { SessoesLiquidadas } from "@/components/dashboard/sessoes-liquidadas";
 import { AnimatedCounter } from "@/components/ui/animated-counter";
 import { EmptyState } from "@/components/ui/empty-state";
 import {
@@ -20,6 +21,8 @@ import type {
   AgingBucket,
   DSO,
   ComparativoMes,
+  CessaoLiquidada,
+  ResumoGeral,
 } from "@/types/database";
 
 export const metadata = {
@@ -29,25 +32,38 @@ export const metadata = {
 export default async function DashboardPage() {
   const supabase = await createClient();
 
-  const [cessoesRes, fluxoRes, inadRes, agingRes, dsoRes, compRes] =
-    await Promise.all([
-      supabase
-        .from("v_cessoes_resumo")
-        .select("*")
-        .order("data_vencimento_inicial", { ascending: true })
-        .returns<CessaoResumo[]>(),
-      supabase.from("v_fluxo_mensal").select("*").returns<FluxoMensal[]>(),
-      supabase
-        .from("v_inadimplencia")
-        .select("*")
-        .returns<InadimplenciaItem[]>(),
-      supabase.from("v_aging_buckets").select("*").returns<AgingBucket[]>(),
-      supabase.from("v_dso").select("*").maybeSingle<DSO>(),
-      supabase
-        .from("v_comparativo_mes")
-        .select("*")
-        .maybeSingle<ComparativoMes>(),
-    ]);
+  const [
+    cessoesRes,
+    fluxoRes,
+    inadRes,
+    agingRes,
+    dsoRes,
+    compRes,
+    liquidadasRes,
+    resumoRes,
+  ] = await Promise.all([
+    supabase
+      .from("v_cessoes_resumo")
+      .select("*")
+      .order("data_vencimento_inicial", { ascending: true })
+      .returns<CessaoResumo[]>(),
+    supabase.from("v_fluxo_mensal").select("*").returns<FluxoMensal[]>(),
+    supabase
+      .from("v_inadimplencia")
+      .select("*")
+      .returns<InadimplenciaItem[]>(),
+    supabase.from("v_aging_buckets").select("*").returns<AgingBucket[]>(),
+    supabase.from("v_dso").select("*").maybeSingle<DSO>(),
+    supabase
+      .from("v_comparativo_mes")
+      .select("*")
+      .maybeSingle<ComparativoMes>(),
+    supabase
+      .from("v_cessoes_liquidadas")
+      .select("*")
+      .returns<CessaoLiquidada[]>(),
+    supabase.from("v_resumo_geral").select("*").maybeSingle<ResumoGeral>(),
+  ]);
 
   if (cessoesRes.error) {
     return <SchemaPendente erro={cessoesRes.error.message} />;
@@ -59,6 +75,14 @@ export default async function DashboardPage() {
   const aging = agingRes.data ?? [];
   const dso = dsoRes.data;
   const comparativo = compRes.data;
+  const liquidadas = liquidadasRes.data ?? [];
+  const resumoGeral = resumoRes.data;
+
+  const cessoesAtivas = cessoes.filter((c) => c.status !== "quitada");
+  const valorLiquidado = liquidadas.reduce(
+    (sum, c) => sum + Number(c.valor_total),
+    0,
+  );
 
   const variacao =
     comparativo && comparativo.mes_anterior > 0
@@ -92,6 +116,11 @@ export default async function DashboardPage() {
       value: Number(c.valor_total),
     }));
 
+  const graficoGeral = [
+    { name: "A receber", value: Number(resumoGeral?.valor_a_receber ?? totais.saldo) },
+    { name: "Liquidadas", value: Number(resumoGeral?.valor_liquidado ?? valorLiquidado) },
+  ].filter((d) => d.value > 0);
+
   return (
     <div>
       <header className="mb-8">
@@ -106,6 +135,11 @@ export default async function DashboardPage() {
         </p>
       </header>
 
+      {/* Sessoes liquidadas — topo do dashboard (solicitacao Dr. Jairo) */}
+      <section className="mb-6">
+        <SessoesLiquidadas cessoes={liquidadas} valorTotal={valorLiquidado} />
+      </section>
+
       {/* KPI primário + secundários */}
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-4">
         {/* Primário destacado — ocupa 2 colunas no desktop */}
@@ -114,7 +148,7 @@ export default async function DashboardPage() {
             label="Saldo a receber"
             value={totais.saldo}
             variacao={variacao}
-            sub={`${cessoes.length} cessão${cessoes.length === 1 ? "" : "ões"} ativa${cessoes.length === 1 ? "" : "s"} · ${formatBRL(totais.total)} volume total`}
+            sub={`${cessoesAtivas.length} cessão${cessoesAtivas.length === 1 ? "" : "ões"} a receber · ${formatBRL(totais.total)} volume total`}
             icon={<IconMoney />}
           />
         </div>
@@ -124,10 +158,10 @@ export default async function DashboardPage() {
           accent="success"
         />
         <KpiAnimado
-          label="Em atraso"
+          label="Valor a receber"
           value={valorAtrasado}
-          accent={valorAtrasado > 0 ? "danger" : "muted"}
-          sub={`${inadimplentes.length} parcela${inadimplentes.length === 1 ? "" : "s"}`}
+          accent={valorAtrasado > 0 ? "warning" : "muted"}
+          sub={`${inadimplentes.length} parcela${inadimplentes.length === 1 ? "" : "s"} pendente${inadimplentes.length === 1 ? "" : "s"}`}
         />
       </section>
 
@@ -195,8 +229,16 @@ export default async function DashboardPage() {
         <AgingBuckets data={aging} />
       </section>
 
-      {/* Pizza cessões */}
-      <section className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
+      {/* Pizza cessões — geral (liquidadas vs a receber) + top 6 */}
+      <section className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <CessoesPizzaChart
+          titulo="Visão geral"
+          subtitulo={`${resumoGeral?.qtd_liquidadas ?? liquidadas.length} liquidada${
+            (resumoGeral?.qtd_liquidadas ?? liquidadas.length) === 1 ? "" : "s"
+          } · ${resumoGeral?.qtd_a_receber ?? cessoesAtivas.length} a receber`}
+          data={graficoGeral}
+          colors={["#c9a961", "#10b981"]}
+        />
         <CessoesPizzaChart
           titulo="Maiores cessões"
           subtitulo="Top 6 por volume"
@@ -292,11 +334,11 @@ export default async function DashboardPage() {
         </section>
       )}
 
-      {/* Lista de cessões com pizza individual */}
+      {/* Lista de cessões a receber — quitadas aparecem em "Sessoes Liquidadas" no topo */}
       <section className="mt-10">
         <header className="mb-4 flex items-center justify-between">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">
-            Cessões cadastradas ({cessoes.length})
+            Cessões a receber ({cessoesAtivas.length})
           </h2>
           <Link
             href="/dashboard/cessoes"
@@ -306,7 +348,7 @@ export default async function DashboardPage() {
           </Link>
         </header>
 
-        {cessoes.length === 0 ? (
+        {cessoesAtivas.length === 0 ? (
           <EmptyState tipo="cessoes" />
         ) : (
           <div className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--background-elevated)]">
@@ -322,7 +364,7 @@ export default async function DashboardPage() {
                 </tr>
               </thead>
               <tbody>
-                {cessoes.map((c) => (
+                {cessoesAtivas.map((c) => (
                   <tr
                     key={c.id}
                     className="border-t border-[var(--border)] hover:bg-black/20"
@@ -467,11 +509,11 @@ function StatusBadge({
   atrasado: boolean;
 }) {
   if (atrasado && status === "ativa") {
-    return <Badge variant="danger">Em atraso</Badge>;
+    return <Badge variant="warning">A receber (vencida)</Badge>;
   }
   const map: Record<CessaoResumo["status"], React.ReactNode> = {
-    ativa: <Badge variant="gold">Ativa</Badge>,
-    quitada: <Badge variant="success">Quitada</Badge>,
+    ativa: <Badge variant="gold">A receber</Badge>,
+    quitada: <Badge variant="success">Liquidada</Badge>,
     inadimplente: <Badge variant="danger">Inadimplente</Badge>,
     cancelada: <Badge variant="neutral">Cancelada</Badge>,
   };

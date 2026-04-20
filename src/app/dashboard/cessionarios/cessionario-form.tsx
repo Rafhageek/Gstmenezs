@@ -34,6 +34,34 @@ export function CessionarioForm({ cessionario }: Props) {
     <form action={formAction} className="space-y-6">
       {state.error && <Alert variant="danger">{state.error}</Alert>}
 
+      <fieldset className="rounded-xl border border-[var(--border)] p-4">
+        <legend className="px-2 text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
+          Tipo de pessoa
+        </legend>
+        <div className="flex gap-6 pt-2 text-sm">
+          <label className="flex items-center gap-2">
+            <input
+              type="radio"
+              name="tipo_pessoa"
+              value="PJ"
+              defaultChecked={(cessionario?.tipo_pessoa ?? "PJ") === "PJ"}
+              className="h-4 w-4 accent-[var(--gold)]"
+            />
+            Pessoa Jurídica (CNPJ)
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="radio"
+              name="tipo_pessoa"
+              value="PF"
+              defaultChecked={cessionario?.tipo_pessoa === "PF"}
+              className="h-4 w-4 accent-[var(--gold)]"
+            />
+            Pessoa Física (CPF)
+          </label>
+        </div>
+      </fieldset>
+
       <section className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <Field label="Nome / Razão social" required error={e.nome}>
           <Input
@@ -64,6 +92,65 @@ export function CessionarioForm({ cessionario }: Props) {
           />
         </Field>
       </section>
+
+      <fieldset className="rounded-xl border border-[var(--border)] p-4">
+        <legend className="px-2 text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
+          Dados do contrato
+        </legend>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+          <Field
+            label="Data do contrato"
+            error={e.data_contrato}
+          >
+            <Input
+              name="data_contrato"
+              type="date"
+              defaultValue={cessionario?.data_contrato ?? ""}
+            />
+          </Field>
+          <Field
+            label="Valor contratado (R$)"
+            error={e.valor_contratado}
+          >
+            <Input
+              name="valor_contratado"
+              type="number"
+              step="0.01"
+              min="0"
+              defaultValue={cessionario?.valor_contratado ?? ""}
+              placeholder="0,00"
+            />
+          </Field>
+          <Field
+            label="Valor da cessão (R$)"
+            error={e.valor_cessao}
+          >
+            <Input
+              name="valor_cessao"
+              type="number"
+              step="0.01"
+              min="0"
+              defaultValue={cessionario?.valor_cessao ?? ""}
+              placeholder="0,00"
+            />
+          </Field>
+          <Field
+            label="Percentual (%)"
+            error={e.percentual}
+            hint="0 a 100"
+          >
+            <Input
+              name="percentual"
+              type="number"
+              step="0.01"
+              min="0"
+              max="100"
+              defaultValue={cessionario?.percentual ?? ""}
+              placeholder="30"
+            />
+          </Field>
+        </div>
+      </fieldset>
 
       <fieldset className="rounded-xl border border-[var(--border)] p-4">
         <legend className="px-2 text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">

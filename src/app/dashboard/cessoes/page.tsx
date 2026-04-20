@@ -26,6 +26,7 @@ const COLUNAS_ORDENAVEIS = [
 interface SearchParams {
   q?: string;
   status?: string;
+  filtro?: string;
   sort?: string;
   dir?: string;
   page?: string;
@@ -58,8 +59,12 @@ export default async function CessoesPage({
       `numero_contrato.ilike.%${sp.q}%,cliente_nome.ilike.%${sp.q}%,cessionario_nome.ilike.%${sp.q}%`,
     );
   }
-  if (sp.status && sp.status !== "todos") {
-    query = query.eq("status", sp.status);
+  // atalho ?filtro=liquidadas vira status=quitada
+  const statusEfetivo =
+    sp.filtro === "liquidadas" ? "quitada" : sp.status;
+
+  if (statusEfetivo && statusEfetivo !== "todos") {
+    query = query.eq("status", statusEfetivo);
   }
 
   const { data, count, error } = await query
@@ -108,31 +113,31 @@ export default async function CessoesPage({
         <FilterTab
           label="Todas"
           value="todos"
-          current={sp.status ?? "todos"}
+          current={statusEfetivo ?? "todos"}
           q={sp.q}
         />
         <FilterTab
-          label="Ativas"
+          label="A receber"
           value="ativa"
-          current={sp.status ?? "todos"}
+          current={statusEfetivo ?? "todos"}
           q={sp.q}
         />
         <FilterTab
-          label="Quitadas"
+          label="Liquidadas"
           value="quitada"
-          current={sp.status ?? "todos"}
+          current={statusEfetivo ?? "todos"}
           q={sp.q}
         />
         <FilterTab
           label="Inadimplentes"
           value="inadimplente"
-          current={sp.status ?? "todos"}
+          current={statusEfetivo ?? "todos"}
           q={sp.q}
         />
         <FilterTab
           label="Canceladas"
           value="cancelada"
-          current={sp.status ?? "todos"}
+          current={statusEfetivo ?? "todos"}
           q={sp.q}
         />
       </nav>
@@ -249,11 +254,11 @@ function StatusBadgeView({
   atrasado: boolean;
 }) {
   if (atrasado && status === "ativa") {
-    return <Badge variant="danger">Em atraso</Badge>;
+    return <Badge variant="warning">A receber (vencida)</Badge>;
   }
   const map: Record<CessaoResumo["status"], React.ReactNode> = {
-    ativa: <Badge variant="gold">Ativa</Badge>,
-    quitada: <Badge variant="success">Quitada</Badge>,
+    ativa: <Badge variant="gold">A receber</Badge>,
+    quitada: <Badge variant="success">Liquidada</Badge>,
     inadimplente: <Badge variant="danger">Inadimplente</Badge>,
     cancelada: <Badge variant="neutral">Cancelada</Badge>,
   };

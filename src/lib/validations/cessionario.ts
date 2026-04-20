@@ -37,6 +37,39 @@ export const cessionarioSchema = z.object({
   banco: bancoSchema,
   observacoes: z.string().trim().optional().or(z.literal("")),
   ativo: z.boolean().optional().default(true),
+  tipo_pessoa: z.enum(["PF", "PJ"]).optional().default("PJ"),
+  data_contrato: z
+    .string()
+    .trim()
+    .optional()
+    .or(z.literal(""))
+    .transform((v) => (v ? v : null)),
+  valor_contratado: z
+    .union([z.string(), z.number()])
+    .optional()
+    .transform((v) => {
+      if (v === undefined || v === null || v === "") return null;
+      const n = typeof v === "number" ? v : Number(String(v).replace(",", "."));
+      return Number.isFinite(n) && n >= 0 ? n : null;
+    }),
+  valor_cessao: z
+    .union([z.string(), z.number()])
+    .optional()
+    .transform((v) => {
+      if (v === undefined || v === null || v === "") return null;
+      const n = typeof v === "number" ? v : Number(String(v).replace(",", "."));
+      return Number.isFinite(n) && n >= 0 ? n : null;
+    }),
+  percentual: z
+    .union([z.string(), z.number()])
+    .optional()
+    .transform((v) => {
+      if (v === undefined || v === null || v === "") return null;
+      const n = typeof v === "number" ? v : Number(String(v).replace(",", "."));
+      if (!Number.isFinite(n)) return null;
+      if (n < 0 || n > 100) return null;
+      return n;
+    }),
 });
 
 export type CessionarioInput = z.infer<typeof cessionarioSchema>;

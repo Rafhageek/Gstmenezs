@@ -231,11 +231,11 @@ function StatusBadgeView({
   atrasado: boolean;
 }) {
   if (atrasado && status === "ativa") {
-    return <Badge variant="danger">Em atraso</Badge>;
+    return <Badge variant="warning">A receber (vencida)</Badge>;
   }
   const map: Record<CessaoResumo["status"], React.ReactNode> = {
-    ativa: <Badge variant="gold">Ativa</Badge>,
-    quitada: <Badge variant="success">Quitada</Badge>,
+    ativa: <Badge variant="gold">A receber</Badge>,
+    quitada: <Badge variant="success">Liquidada</Badge>,
     inadimplente: <Badge variant="danger">Inadimplente</Badge>,
     cancelada: <Badge variant="neutral">Cancelada</Badge>,
   };

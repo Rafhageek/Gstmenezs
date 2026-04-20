@@ -29,6 +29,7 @@ function parseBanco(formData: FormData) {
 }
 
 function getDados(formData: FormData) {
+  const tipoPessoa = String(formData.get("tipo_pessoa") ?? "PJ");
   return {
     nome: String(formData.get("nome") ?? ""),
     documento: String(formData.get("documento") ?? ""),
@@ -37,6 +38,11 @@ function getDados(formData: FormData) {
     banco: parseBanco(formData),
     observacoes: String(formData.get("observacoes") ?? ""),
     ativo: formData.get("ativo") === "on" || formData.get("ativo") === "true",
+    tipo_pessoa: (tipoPessoa === "PF" ? "PF" : "PJ") as "PF" | "PJ",
+    data_contrato: String(formData.get("data_contrato") ?? ""),
+    valor_contratado: String(formData.get("valor_contratado") ?? ""),
+    valor_cessao: String(formData.get("valor_cessao") ?? ""),
+    percentual: String(formData.get("percentual") ?? ""),
   };
 }
 

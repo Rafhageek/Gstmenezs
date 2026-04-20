@@ -3,10 +3,10 @@ import { formatBRL } from "@/lib/format";
 import type { AgingBucket } from "@/types/database";
 
 const LABELS: Record<AgingBucket["bucket"], { label: string; color: string }> = {
-  ate_30: { label: "0-30 dias", color: "var(--warning)" },
-  de_31_60: { label: "31-60 dias", color: "#f97316" },
-  de_61_90: { label: "61-90 dias", color: "#ef4444" },
-  acima_90: { label: "90+ dias", color: "#991b1b" },
+  ate_30: { label: "Até 30 dias", color: "var(--gold)" },
+  de_31_60: { label: "31-60 dias", color: "var(--warning)" },
+  de_61_90: { label: "61-90 dias", color: "#f97316" },
+  acima_90: { label: "Acima de 90 dias", color: "#ef4444" },
 };
 
 const ORDEM: AgingBucket["bucket"][] = [
@@ -31,10 +31,10 @@ export function AgingBuckets({ data }: { data: AgingBucket[] }) {
       <header className="mb-4 flex items-end justify-between">
         <div>
           <p className="text-xs uppercase tracking-wide text-[var(--muted)]">
-            Aging (atrasos)
+            Valor a receber por período
           </p>
           <p className="mt-1 text-xs text-[var(--muted)]/70">
-            Classificação do saldo em atraso por tempo
+            Classificação do saldo a receber pelo tempo de vencimento
           </p>
         </div>
         {totalQtd > 0 && (
@@ -53,7 +53,7 @@ export function AgingBuckets({ data }: { data: AgingBucket[] }) {
             ✓ Carteira em dia
           </p>
           <p className="mt-1 text-xs text-[var(--muted)]">
-            Nenhuma parcela em atraso.
+            Nenhuma parcela pendente.
           </p>
         </div>
       ) : (
@@ -109,9 +109,9 @@ export function AgingBuckets({ data }: { data: AgingBucket[] }) {
 
           <div className="mt-4 flex items-center justify-between border-t border-[var(--border)] pt-3 text-sm">
             <span className="text-xs uppercase tracking-wide text-[var(--muted)]">
-              Total em atraso
+              Total a receber
             </span>
-            <span className="font-mono font-semibold text-[var(--danger)]">
+            <span className="font-mono font-semibold text-[var(--gold)]">
               {formatBRL(total)}
             </span>
           </div>

@@ -60,6 +60,8 @@ export interface ClientePrincipal {
   updated_at: string;
 }
 
+export type TipoPessoa = "PF" | "PJ";
+
 export interface Cessionario {
   id: string;
   nome: string;
@@ -70,6 +72,16 @@ export interface Cessionario {
   banco: DadosBancarios | null;
   observacoes: string | null;
   ativo: boolean;
+  /** PF (pessoa física) ou PJ (pessoa jurídica) */
+  tipo_pessoa: TipoPessoa | null;
+  /** Data do contrato de cessão */
+  data_contrato: string | null;
+  /** Valor original contratado */
+  valor_contratado: number | null;
+  /** Valor efetivo da cessão */
+  valor_cessao: number | null;
+  /** Percentual do crédito cedido (0-100) */
+  percentual: number | null;
   created_by: string;
   created_at: string;
   updated_at: string;
@@ -268,6 +280,29 @@ export interface InadimplenciaItem {
   cliente_nome: string;
   cliente_documento: string;
   cessionario_nome: string;
+}
+
+export interface CessaoLiquidada {
+  id: string;
+  numero_contrato: string;
+  valor_total: number;
+  valor_pago: number;
+  data_cessao: string;
+  data_vencimento_inicial: string;
+  data_liquidacao: string | null;
+  cliente_nome: string;
+  cliente_documento: string;
+  cessionario_nome: string;
+}
+
+export interface ResumoGeral {
+  qtd_liquidadas: number;
+  qtd_a_receber: number;
+  qtd_canceladas: number;
+  valor_liquidado: number;
+  valor_a_receber: number;
+  valor_recebido_total: number;
+  volume_total: number;
 }
 
 export interface ExtratoCliente {

@@ -5,7 +5,7 @@ import { getConfiguracoes } from "@/lib/configuracoes";
 import { LoginForm } from "./login-form";
 
 export const metadata = {
-  title: "Entrar — Painel MNZ",
+  title: "Entrar — Painel Financeiro",
 };
 
 export default async function LoginPage() {
@@ -34,7 +34,7 @@ export default async function LoginPage() {
               {config.razao_social}
             </p>
             <h1 className="text-2xl font-semibold tracking-tight">
-              Painel MNZ
+              Painel Financeiro
             </h1>
           </div>
         </div>

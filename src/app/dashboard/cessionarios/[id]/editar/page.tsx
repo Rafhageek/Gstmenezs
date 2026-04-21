@@ -5,7 +5,7 @@ import { CessionarioForm } from "../../cessionario-form";
 import type { Cessionario } from "@/types/database";
 
 export const metadata = {
-  title: "Editar cessionário — Painel MNZ",
+  title: "Editar cessionário — Painel Financeiro",
 };
 
 interface Props {

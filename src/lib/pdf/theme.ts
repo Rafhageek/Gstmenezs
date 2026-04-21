@@ -1,7 +1,7 @@
 import { StyleSheet } from "@react-pdf/renderer";
 
 /**
- * Tokens visuais para PDFs do Painel MNZ.
+ * Tokens visuais para PDFs do Painel Financeiro.
  * Mantém a identidade Menezes Advocacia (azul marinho + dourado).
  */
 export const PDF_COLORS = {

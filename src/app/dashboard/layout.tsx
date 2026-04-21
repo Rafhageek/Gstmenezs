@@ -92,7 +92,7 @@ export default async function DashboardLayout({
                 Menezes Advocacia
               </p>
               <p className="text-sm font-semibold tracking-tight">
-                Painel MNZ
+                Painel Financeiro
               </p>
             </div>
           </Link>

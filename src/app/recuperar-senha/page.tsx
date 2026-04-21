@@ -4,7 +4,7 @@ import { getConfiguracoes } from "@/lib/configuracoes";
 import { RecuperarSenhaForm } from "./form";
 
 export const metadata = {
-  title: "Recuperar senha — Painel MNZ",
+  title: "Recuperar senha — Painel Financeiro",
 };
 
 export default async function RecuperarSenhaPage() {
@@ -19,7 +19,7 @@ export default async function RecuperarSenhaPage() {
               {config.razao_social}
             </p>
             <h1 className="text-2xl font-semibold tracking-tight">
-              Painel MNZ
+              Painel Financeiro
             </h1>
           </div>
         </div>

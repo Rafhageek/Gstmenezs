@@ -7,7 +7,7 @@ import { Verificacao2faForm } from "./form";
 import { pularSeSemPergunta } from "./actions";
 
 export const metadata = {
-  title: "Verificação — Painel MNZ",
+  title: "Verificação — Painel Financeiro",
   robots: { index: false, follow: false },
 };
 
@@ -59,7 +59,7 @@ export default async function Verificacao2faPage() {
               {config.razao_social}
             </p>
             <h1 className="text-2xl font-semibold tracking-tight">
-              Painel MNZ
+              Painel Financeiro
             </h1>
           </div>
         </div>

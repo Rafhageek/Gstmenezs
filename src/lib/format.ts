@@ -1,5 +1,5 @@
 /**
- * Formatadores e helpers para o domínio Painel MNZ.
+ * Formatadores e helpers para o domínio Painel Financeiro.
  * Sempre opera com locale pt-BR.
  */
 

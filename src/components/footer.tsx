@@ -17,7 +17,7 @@ export async function Footer() {
           {config.oab && <span>OAB {config.oab}</span>}
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <span>Sistema proprietário · Painel MNZ v1.0</span>
+          <span>Sistema proprietário · Painel Financeiro v1.0</span>
           <span aria-hidden className="text-[var(--border)]">
             ·
           </span>

@@ -3,7 +3,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { DemoClient } from "./demo-client";
 
 export const metadata = {
-  title: "Dados demo — Painel MNZ",
+  title: "Dados demo — Painel Financeiro",
 };
 
 interface DemoCounts {

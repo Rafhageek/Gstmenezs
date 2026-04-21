@@ -5,7 +5,7 @@ import { SegurancaForm } from "./form";
 import type { Profile } from "@/types/database";
 
 export const metadata = {
-  title: "Segurança 2FA — Painel MNZ",
+  title: "Segurança 2FA — Painel Financeiro",
 };
 
 export default async function SegurancaPage() {

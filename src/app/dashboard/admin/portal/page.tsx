@@ -7,7 +7,7 @@ import { CopiarLinkButton, RevogarLinkButton } from "./link-actions";
 import type { ClientePrincipal, PortalLinkView } from "@/types/database";
 
 export const metadata = {
-  title: "Portal do contador — Painel MNZ",
+  title: "Portal do contador — Painel Financeiro",
 };
 
 export default async function PortalAdminPage() {

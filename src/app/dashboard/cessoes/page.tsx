@@ -10,7 +10,7 @@ import { formatBRL, formatDataBR } from "@/lib/format";
 import type { CessaoResumo } from "@/types/database";
 
 export const metadata = {
-  title: "Cessões — Painel MNZ",
+  title: "Cessões — Painel Financeiro",
 };
 
 const PAGE_SIZE = 20;

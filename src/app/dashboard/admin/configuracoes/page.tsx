@@ -5,7 +5,7 @@ import { ConfigForm } from "./config-form";
 import type { Configuracoes } from "@/types/database";
 
 export const metadata = {
-  title: "Configurações — Painel MNZ",
+  title: "Configurações — Painel Financeiro",
 };
 
 export default async function ConfiguracoesPage() {

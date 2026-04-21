@@ -7,7 +7,7 @@ import type { Passkey } from "@/types/database";
 import { DesbloqueioForm } from "./form";
 
 export const metadata = {
-  title: "Desbloquear — Painel MNZ",
+  title: "Desbloquear — Painel Financeiro",
 };
 
 const UNLOCK_COOKIE = "mnz_unlock_at";
@@ -71,7 +71,7 @@ export default async function DesbloquearPage({
               {config.razao_social}
             </p>
             <h1 className="text-2xl font-semibold tracking-tight">
-              Painel MNZ
+              Painel Financeiro
             </h1>
           </div>
         </div>

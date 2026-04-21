@@ -9,7 +9,7 @@ import type {
 } from "@/types/database";
 
 export const metadata = {
-  title: "Editar cessão — Painel MNZ",
+  title: "Editar cessão — Painel Financeiro",
 };
 
 interface Props {

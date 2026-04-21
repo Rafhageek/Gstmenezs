@@ -12,7 +12,7 @@ import {
 import type { Profile } from "@/types/database";
 
 export const metadata = {
-  title: "Usuários — Painel MNZ",
+  title: "Usuários — Painel Financeiro",
 };
 
 export default async function UsuariosAdminPage() {

@@ -22,16 +22,16 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "Painel MNZ — Menezes Advocacia",
+  title: "Painel Financeiro — Menezes Advocacia",
   description:
     "Sistema de gestão de recebíveis de cessão de crédito do escritório Menezes Advocacia.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Painel MNZ",
+    title: "Painel Financeiro",
   },
-  applicationName: "Painel MNZ",
+  applicationName: "Painel Financeiro",
   formatDetection: { telephone: false },
 };
 

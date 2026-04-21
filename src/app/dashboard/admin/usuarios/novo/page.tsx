@@ -2,7 +2,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { NovoUsuarioForm } from "./novo-usuario-form";
 
 export const metadata = {
-  title: "Novo usuário — Painel MNZ",
+  title: "Novo usuário — Painel Financeiro",
 };
 
 export default function NovoUsuarioPage() {

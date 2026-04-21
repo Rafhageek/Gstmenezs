@@ -22,7 +22,7 @@ export function ThemeToggle() {
       if (stored === "light" || stored === "dark") {
         setTheme(stored);
       } else {
-        // Dark é o padrão do Painel MNZ (identidade jurídica)
+        // Dark é o padrão do Painel Financeiro (identidade jurídica)
         setTheme("dark");
       }
     } catch {

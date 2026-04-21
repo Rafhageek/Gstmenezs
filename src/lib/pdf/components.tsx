@@ -22,7 +22,7 @@ export function PdfHeader({
           <Text style={pdfStyles.brandLine1}>
             {razaoSocial.toUpperCase()}
           </Text>
-          <Text style={pdfStyles.brandLine2}>Painel MNZ</Text>
+          <Text style={pdfStyles.brandLine2}>Painel Financeiro</Text>
         </View>
       </View>
       <View style={pdfStyles.reportMeta}>
@@ -104,7 +104,7 @@ export function PdfInfo({
 
 /* Rodapé fixo (rodapé persistente em todas as páginas) */
 export function PdfFooter({
-  legenda = "Documento gerado pelo sistema Painel MNZ — uso interno do escritório",
+  legenda = "Documento gerado pelo sistema Painel Financeiro — uso interno do escritório",
   contato,
 }: {
   legenda?: string;

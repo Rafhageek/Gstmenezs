@@ -8,7 +8,7 @@ import { formatBRL, formatDataBR, formatDocumento } from "@/lib/format";
 import type { Cessionario, CessaoResumo } from "@/types/database";
 
 export const metadata = {
-  title: "Detalhes do cessionário — Painel MNZ",
+  title: "Detalhes do cessionário — Painel Financeiro",
 };
 
 interface Props {

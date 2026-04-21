@@ -6,7 +6,7 @@ import { getConfiguracoes } from "@/lib/configuracoes";
 import { NovaSenhaForm } from "./form";
 
 export const metadata = {
-  title: "Definir nova senha — Painel MNZ",
+  title: "Definir nova senha — Painel Financeiro",
 };
 
 export default async function NovaSenhaPage() {
@@ -28,7 +28,7 @@ export default async function NovaSenhaPage() {
               {config.razao_social}
             </p>
             <h1 className="text-2xl font-semibold tracking-tight">
-              Painel MNZ
+              Painel Financeiro
             </h1>
           </div>
         </div>

@@ -11,7 +11,7 @@ import { formatBRL, formatDataBR, formatDocumento, formatTelefone, digits } from
 import type { Cessionario } from "@/types/database";
 
 export const metadata = {
-  title: "Cessionários — Painel MNZ",
+  title: "Cessionários — Painel Financeiro",
 };
 
 const PAGE_SIZE = 20;

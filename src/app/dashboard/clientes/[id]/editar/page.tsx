@@ -5,7 +5,7 @@ import { ClienteForm } from "../../cliente-form";
 import type { ClientePrincipal } from "@/types/database";
 
 export const metadata = {
-  title: "Editar cliente — Painel MNZ",
+  title: "Editar cliente — Painel Financeiro",
 };
 
 interface Props {

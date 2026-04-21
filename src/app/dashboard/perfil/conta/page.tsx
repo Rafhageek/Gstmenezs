@@ -5,7 +5,7 @@ import { EmailForm } from "./email-form";
 import { SenhaForm } from "./senha-form";
 
 export const metadata = {
-  title: "E-mail e senha — Painel MNZ",
+  title: "E-mail e senha — Painel Financeiro",
 };
 
 export default async function ContaPage() {

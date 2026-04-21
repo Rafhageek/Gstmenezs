@@ -10,7 +10,7 @@ import { formatDocumento, formatTelefone, digits } from "@/lib/format";
 import type { ClientePrincipal, InadimplenciaItem } from "@/types/database";
 
 export const metadata = {
-  title: "Clientes Principais — Painel MNZ",
+  title: "Clientes Principais — Painel Financeiro",
 };
 
 const PAGE_SIZE = 20;

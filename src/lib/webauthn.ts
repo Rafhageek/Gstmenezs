@@ -18,7 +18,7 @@ export async function getWebauthnConfig() {
 
   return {
     rpID: hostname,
-    rpName: "Painel MNZ — Menezes Advocacia",
+    rpName: "Painel Financeiro — Menezes Advocacia",
     origin,
   };
 }

@@ -10,7 +10,7 @@ import type {
 } from "@/types/database";
 
 export const metadata = {
-  title: "Relatórios — Painel MNZ",
+  title: "Relatórios — Painel Financeiro",
 };
 
 export default async function RelatoriosPage() {

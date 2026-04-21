@@ -7,7 +7,7 @@ import { formatBRL, formatDataBR } from "@/lib/format";
 import type { Pagamento, CessaoCredito, ClientePrincipal } from "@/types/database";
 
 export const metadata = {
-  title: "Pagamentos — Painel MNZ",
+  title: "Pagamentos — Painel Financeiro",
 };
 
 interface SearchParams {

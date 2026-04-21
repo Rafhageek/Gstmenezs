@@ -2,7 +2,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { CessionarioForm } from "../cessionario-form";
 
 export const metadata = {
-  title: "Novo cessionário — Painel MNZ",
+  title: "Novo cessionário — Painel Financeiro",
 };
 
 export default function NovoCessionarioPage() {

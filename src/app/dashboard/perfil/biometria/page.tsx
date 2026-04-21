@@ -5,7 +5,7 @@ import { BiometriaManager } from "./manager";
 import type { Passkey } from "@/types/database";
 
 export const metadata = {
-  title: "Biometria — Painel MNZ",
+  title: "Biometria — Painel Financeiro",
 };
 
 export default async function BiometriaPage() {

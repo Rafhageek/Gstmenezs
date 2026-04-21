@@ -9,7 +9,7 @@ import type {
 } from "@/types/database";
 
 export const metadata = {
-  title: "Agenda — Painel MNZ",
+  title: "Agenda — Painel Financeiro",
 };
 
 interface SearchParams {

@@ -25,7 +25,7 @@ import type {
 } from "@/types/database";
 
 export const metadata = {
-  title: "Detalhes da cessão — Painel MNZ",
+  title: "Detalhes da cessão — Painel Financeiro",
 };
 
 interface Props {

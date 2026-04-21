@@ -6,7 +6,7 @@ import { CessaoForm } from "../cessao-form";
 import type { ClientePrincipal, Cessionario } from "@/types/database";
 
 export const metadata = {
-  title: "Nova cessão — Painel MNZ",
+  title: "Nova cessão — Painel Financeiro",
 };
 
 export default async function NovaCessaoPage() {

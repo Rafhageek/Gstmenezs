@@ -15,7 +15,7 @@ const FALLBACK: Configuracoes = {
   logo_url: null,
   cor_primaria: "#c9a961",
   legenda_pdf:
-    "Documento gerado pelo sistema Painel MNZ — uso interno do escritório",
+    "Documento gerado pelo sistema Painel Financeiro — uso interno do escritório",
   updated_at: new Date().toISOString(),
   updated_by: null,
 };

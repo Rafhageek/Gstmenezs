@@ -180,7 +180,7 @@ export function ConfigForm({ config }: Props) {
             <Input
               name="legenda_pdf"
               defaultValue={config.legenda_pdf ?? ""}
-              placeholder="Documento gerado pelo sistema Painel MNZ"
+              placeholder="Documento gerado pelo sistema Painel Financeiro"
             />
           </Field>
         </div>

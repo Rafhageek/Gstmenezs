@@ -231,7 +231,7 @@ export function CessaoPDF({
         <PdfFooter
           legenda={
             config.legenda_pdf ??
-            "Documento gerado pelo sistema Painel MNZ"
+            "Documento gerado pelo sistema Painel Financeiro"
           }
           contato={formatarContato(config)}
         />

@@ -6,7 +6,7 @@ import type { Profile } from "@/types/database";
 import { WelcomeSplash } from "./welcome";
 
 export const metadata = {
-  title: "Bem-vindo — Painel MNZ",
+  title: "Bem-vindo — Painel Financeiro",
 };
 
 export default async function BemVindoPage() {

@@ -3,7 +3,7 @@ import { Alert } from "@/components/ui/feedback";
 import { ImportWizard } from "./wizard";
 
 export const metadata = {
-  title: "Importar CSV — Painel MNZ",
+  title: "Importar CSV — Painel Financeiro",
 };
 
 export default function ImportarPage() {

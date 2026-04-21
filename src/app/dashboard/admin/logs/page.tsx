@@ -6,7 +6,7 @@ import { LogJsonDiff } from "./log-json-diff";
 import type { LogAuditoriaView } from "@/types/database";
 
 export const metadata = {
-  title: "Logs de auditoria — Painel MNZ",
+  title: "Logs de auditoria — Painel Financeiro",
 };
 
 interface SearchParams {

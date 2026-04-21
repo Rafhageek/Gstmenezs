@@ -14,7 +14,7 @@ import type {
 } from "@/types/database";
 
 export const metadata = {
-  title: "Visão geral — Painel MNZ",
+  title: "Visão geral — Painel Financeiro",
 };
 
 const MESES_NOMES = [

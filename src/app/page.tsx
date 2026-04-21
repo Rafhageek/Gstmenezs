@@ -18,7 +18,7 @@ export default async function Home() {
               Menezes Advocacia
             </p>
             <h1 className="text-2xl font-semibold tracking-tight">
-              Painel MNZ
+              Painel Financeiro
             </h1>
           </div>
         </div>

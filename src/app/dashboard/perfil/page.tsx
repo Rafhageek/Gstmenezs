@@ -5,7 +5,7 @@ import { formatDataBR } from "@/lib/format";
 import type { Profile, LogAuditoriaView } from "@/types/database";
 
 export const metadata = {
-  title: "Meu perfil — Painel MNZ",
+  title: "Meu perfil — Painel Financeiro",
 };
 
 const ACOES_LABEL: Record<string, string> = {

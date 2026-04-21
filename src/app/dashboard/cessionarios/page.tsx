@@ -5,7 +5,7 @@ import { DataTable } from "@/components/ui/data-table";
 import { Badge } from "@/components/ui/feedback";
 import { SearchInput } from "@/components/ui/search-input";
 import { SortableHeader } from "@/components/ui/sortable-header";
-import { DateRangeFilter } from "@/components/ui/date-range-filter";
+import { MonthYearFilter } from "@/components/ui/month-year-filter";
 import { Pagination } from "@/components/ui/pagination";
 import { formatBRL, formatDataBR, formatDocumento, formatTelefone, digits } from "@/lib/format";
 import type { Cessionario } from "@/types/database";
@@ -26,12 +26,21 @@ const COLUNAS_ORDENAVEIS = [
 
 interface SearchParams {
   q?: string;
-  de?: string;
-  ate?: string;
+  mes?: string;
+  ano?: string;
   status?: string;
   sort?: string;
   dir?: string;
   page?: string;
+}
+
+function pad2(n: number) {
+  return String(n).padStart(2, "0");
+}
+
+function ultimoDiaMes(ano: number, mes: number): string {
+  const d = new Date(ano, mes, 0); // mes 1-12; new Date(ano, mes, 0) = ultimo dia do mes anterior
+  return `${ano}-${pad2(mes)}-${pad2(d.getDate())}`;
 }
 
 export default async function CessionariosPage({
@@ -67,12 +76,28 @@ export default async function CessionariosPage({
     }
   }
 
-  // Filtro por data_contrato (desde / até)
-  if (sp.de) {
-    query = query.gte("data_contrato", sp.de);
-  }
-  if (sp.ate) {
-    query = query.lte("data_contrato", sp.ate);
+  // Filtro por mes e/ou ano (data_contrato)
+  const mesNum = sp.mes ? Number(sp.mes) : null;
+  const anoNum = sp.ano ? Number(sp.ano) : null;
+
+  if (anoNum && mesNum) {
+    // mes + ano → range do mes especifico
+    query = query
+      .gte("data_contrato", `${anoNum}-${pad2(mesNum)}-01`)
+      .lte("data_contrato", ultimoDiaMes(anoNum, mesNum));
+  } else if (anoNum) {
+    // so ano → range do ano inteiro
+    query = query
+      .gte("data_contrato", `${anoNum}-01-01`)
+      .lte("data_contrato", `${anoNum}-12-31`);
+  } else if (mesNum) {
+    // so mes (sem ano) → usa filter textual que bate mes em qualquer ano
+    // data_contrato tem formato YYYY-MM-DD; o substring de MM esta na posicao 6-7
+    query = query.filter(
+      "data_contrato",
+      "like",
+      `%-${pad2(mesNum)}-%`,
+    );
   }
 
   // Filtro por status ativo/inativo
@@ -97,8 +122,8 @@ export default async function CessionariosPage({
 
   const baseQuery = new URLSearchParams();
   if (sp.q) baseQuery.set("q", sp.q);
-  if (sp.de) baseQuery.set("de", sp.de);
-  if (sp.ate) baseQuery.set("ate", sp.ate);
+  if (sp.mes) baseQuery.set("mes", sp.mes);
+  if (sp.ano) baseQuery.set("ano", sp.ano);
   if (sp.status) baseQuery.set("status", sp.status);
   if (sp.sort) baseQuery.set("sort", sp.sort);
   if (sp.dir) baseQuery.set("dir", sp.dir);
@@ -117,7 +142,7 @@ export default async function CessionariosPage({
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <SearchInput placeholder="Buscar por nome ou CPF/CNPJ..." />
         <div className="flex flex-wrap items-center gap-3">
-          <DateRangeFilter labelDe="Contrato de" labelAte="até" />
+          <MonthYearFilter label="Contrato" />
           <StatusTabs current={sp.status} baseParams={baseQuery.toString()} />
         </div>
       </div>

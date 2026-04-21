@@ -20,6 +20,10 @@ interface Props {
   data: PizzaData[];
   /** Cores em ordem de prioridade. */
   colors?: string[];
+  /** Texto grande no centro do donut (ex: "33%"). */
+  centerLabel?: string;
+  /** Texto pequeno abaixo do centerLabel (ex: "recebido"). */
+  centerSub?: string;
 }
 
 const DEFAULT_COLORS = [
@@ -36,6 +40,8 @@ export function CessoesPizzaChart({
   subtitulo,
   data,
   colors = DEFAULT_COLORS,
+  centerLabel,
+  centerSub,
 }: Props) {
   const total = data.reduce((sum, d) => sum + d.value, 0);
 
@@ -55,40 +61,55 @@ export function CessoesPizzaChart({
       )}
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div className="h-56 w-full">
+        <div className="relative h-56 w-full">
           {total === 0 ? (
             <div className="flex h-full items-center justify-center text-xs text-[var(--muted)]">
               Sem dados
             </div>
           ) : (
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={data}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={50}
-                  outerRadius={80}
-                  paddingAngle={2}
-                  dataKey="value"
-                  stroke="#0a1628"
-                  strokeWidth={2}
-                >
-                  {data.map((_, i) => (
-                    <Cell key={i} fill={colors[i % colors.length]} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "#0a1628",
-                    border: "1px solid #1e3a5f",
-                    borderRadius: 8,
-                    fontSize: 12,
-                  }}
-                  formatter={(v) => formatBRL(Number(v))}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+            <>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={data}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={80}
+                    paddingAngle={2}
+                    dataKey="value"
+                    stroke="#0a1628"
+                    strokeWidth={2}
+                  >
+                    {data.map((_, i) => (
+                      <Cell key={i} fill={colors[i % colors.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "#0a1628",
+                      border: "1px solid #1e3a5f",
+                      borderRadius: 8,
+                      fontSize: 12,
+                    }}
+                    formatter={(v) => formatBRL(Number(v))}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+
+              {centerLabel && (
+                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-2xl font-semibold text-foreground">
+                    {centerLabel}
+                  </span>
+                  {centerSub && (
+                    <span className="text-[10px] uppercase tracking-wide text-[var(--muted)]">
+                      {centerSub}
+                    </span>
+                  )}
+                </div>
+              )}
+            </>
           )}
         </div>
 

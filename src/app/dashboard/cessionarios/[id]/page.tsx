@@ -145,6 +145,8 @@ export default async function CessionarioDetalhesPage({ params }: Props) {
               subtitulo={`${pctRecebido.toFixed(1)}% recebido · ${pctAReceber.toFixed(1)}% a receber`}
               data={pizzaData}
               colors={["#10b981", "#c9a961"]}
+              centerLabel={`${pctRecebido.toFixed(1)}%`}
+              centerSub="recebido"
             />
           ) : (
             <div className="flex min-h-[220px] items-center justify-center rounded-xl border border-dashed border-[var(--border)] bg-[var(--background-elevated)]/40 p-5 text-center text-sm text-[var(--muted)]">

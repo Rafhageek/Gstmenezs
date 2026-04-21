@@ -4,11 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/ui/page-header";
 import { DataTable } from "@/components/ui/data-table";
 import { Badge } from "@/components/ui/feedback";
-import {
-  formatBRL,
-  formatDocumento,
-  formatTelefone,
-} from "@/lib/format";
+import { formatBRL, formatDataBR, formatDocumento } from "@/lib/format";
 import type { Cessionario, CessaoResumo } from "@/types/database";
 
 export const metadata = {
@@ -50,6 +46,29 @@ export default async function CessionarioDetalhesPage({ params }: Props) {
     { total: 0, recebido: 0, saldo: 0 },
   );
 
+  // Busca a ultima data de pagamento de cada cessao desta lista
+  const ultimaDataPorCessao = new Map<string, string>();
+  if (lista.length > 0) {
+    const { data: pagsRaw } = await supabase
+      .from("pagamentos")
+      .select("cessao_id, data_pagamento")
+      .in(
+        "cessao_id",
+        lista.map((c) => c.id),
+      )
+      .not("data_pagamento", "is", null)
+      .order("data_pagamento", { ascending: false });
+
+    for (const p of (pagsRaw ?? []) as {
+      cessao_id: string;
+      data_pagamento: string;
+    }[]) {
+      if (!ultimaDataPorCessao.has(p.cessao_id)) {
+        ultimaDataPorCessao.set(p.cessao_id, p.data_pagamento);
+      }
+    }
+  }
+
   return (
     <div>
       <PageHeader
@@ -68,85 +87,24 @@ export default async function CessionarioDetalhesPage({ params }: Props) {
       </div>
 
       <section className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-4">
-        <Kpi label="Volume total" value={formatBRL(totais.total)} />
+        <Kpi label="Valor da cessão" value={formatBRL(totais.total)} />
         <Kpi
-          label="Já recebeu"
+          label="Total recebido"
           value={formatBRL(totais.recebido)}
           accent="success"
         />
         <Kpi
-          label="A receber"
+          label="Total a receber"
           value={formatBRL(totais.saldo)}
           accent="gold"
         />
         <Kpi label="Cessões" value={String(lista.length)} />
       </section>
 
-      <section className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-3">
-        <InfoCard titulo="Identificação">
-          <Info
-            label="Tipo"
-            value={
-              cessionario.tipo_pessoa === "PF"
-                ? "Pessoa Física"
-                : "Pessoa Jurídica"
-            }
-          />
-          <Info label="E-mail" value={cessionario.email ?? ""} />
-          <Info
-            label="Telefone"
-            value={formatTelefone(cessionario.telefone)}
-          />
-        </InfoCard>
-        <InfoCard titulo="Dados do contrato">
-          <Info
-            label="Data do contrato"
-            value={
-              cessionario.data_contrato
-                ? new Date(cessionario.data_contrato).toLocaleDateString(
-                    "pt-BR",
-                  )
-                : ""
-            }
-          />
-          <Info
-            label="Valor contratado"
-            value={
-              cessionario.valor_contratado != null
-                ? formatBRL(cessionario.valor_contratado)
-                : ""
-            }
-          />
-          <Info
-            label="Valor da cessão"
-            value={
-              cessionario.valor_cessao != null
-                ? formatBRL(cessionario.valor_cessao)
-                : ""
-            }
-          />
-          <Info
-            label="Percentual"
-            value={
-              cessionario.percentual != null
-                ? `${cessionario.percentual}%`
-                : ""
-            }
-          />
-        </InfoCard>
-        <InfoCard titulo="Dados bancários (repasse)">
-          <Info label="Banco" value={cessionario.banco?.banco ?? ""} />
-          <Info label="Agência" value={cessionario.banco?.agencia ?? ""} />
-          <Info label="Conta" value={cessionario.banco?.conta ?? ""} />
-          <Info label="Tipo" value={cessionario.banco?.tipo ?? ""} />
-          <Info label="PIX" value={cessionario.banco?.pix ?? ""} />
-        </InfoCard>
-      </section>
-
       {cessionario.observacoes && (
         <section className="mb-8 rounded-xl border border-[var(--border)] bg-[var(--background-elevated)] p-5">
           <p className="text-xs uppercase tracking-wide text-[var(--muted)]">
-            Observações internas
+            Observações
           </p>
           <p className="mt-2 text-sm whitespace-pre-wrap">
             {cessionario.observacoes}
@@ -159,31 +117,30 @@ export default async function CessionarioDetalhesPage({ params }: Props) {
           Cessões recebidas ({lista.length})
         </h2>
         <DataTable
-          headers={["Contrato", "Cliente", "Valor", "Pago", "Status", ""]}
-          rows={lista.map((c) => [
-            <span key="n" className="font-mono text-xs">
-              {c.numero_contrato}
-            </span>,
-            <span key="cl">{c.cliente_nome}</span>,
-            <span key="v" className="font-mono">
-              {formatBRL(c.valor_total)}
-            </span>,
-            <span key="p" className="font-mono text-[var(--success)]">
-              {formatBRL(c.valor_pago)}
-            </span>,
-            <StatusBadgeView
-              key="s"
-              status={c.status}
-              atrasado={!!c.primeira_parcela_atrasada}
-            />,
-            <Link
-              key="a"
-              href={`/dashboard/cessoes/${c.id}`}
-              className="text-xs text-[var(--gold)] hover:underline"
-            >
-              Abrir
-            </Link>,
-          ])}
+          headers={["Data", "Valor pago", "Status", ""]}
+          rows={lista.map((c) => {
+            const ultimaData = ultimaDataPorCessao.get(c.id);
+            return [
+              <span key="d" className="text-sm text-[var(--muted)]">
+                {ultimaData ? formatDataBR(ultimaData) : "—"}
+              </span>,
+              <span key="vp" className="font-mono text-[var(--success)]">
+                {formatBRL(c.valor_pago)}
+              </span>,
+              <StatusBadgeView
+                key="s"
+                status={c.status}
+                atrasado={!!c.primeira_parcela_atrasada}
+              />,
+              <Link
+                key="a"
+                href={`/dashboard/cessoes/${c.id}`}
+                className="text-xs text-[var(--gold)] hover:underline"
+              >
+                Abrir
+              </Link>,
+            ];
+          })}
           empty={
             <p className="text-sm text-[var(--muted)]">
               Nenhuma cessão associada a este cessionário.
@@ -218,32 +175,6 @@ function Kpi({
       <p className={`mt-2 text-2xl font-semibold ${colorMap[accent]}`}>
         {value}
       </p>
-    </div>
-  );
-}
-
-function InfoCard({
-  titulo,
-  children,
-}: {
-  titulo: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="rounded-xl border border-[var(--border)] bg-[var(--background-elevated)] p-5">
-      <p className="text-xs uppercase tracking-wide text-[var(--muted)]">
-        {titulo}
-      </p>
-      <div className="mt-3 space-y-2">{children}</div>
-    </div>
-  );
-}
-
-function Info({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex justify-between gap-3 text-sm">
-      <span className="text-[var(--muted)]">{label}</span>
-      <span className="text-right">{value || "—"}</span>
     </div>
   );
 }

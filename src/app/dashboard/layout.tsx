@@ -10,6 +10,7 @@ import { NavDropdown } from "@/components/nav-dropdown";
 import { UserMenu } from "@/components/user-menu";
 import { Footer } from "@/components/footer";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { HelpButton } from "@/components/help-button";
 import type {
   Profile,
   ParcelaProxima,
@@ -59,6 +60,7 @@ export default async function DashboardLayout({
     { href: "/dashboard/clientes", label: "Clientes" },
     { href: "/dashboard/cessionarios", label: "Cessionários" },
     { href: "/dashboard/relatorios", label: "Relatórios" },
+    { href: "/dashboard/ajuda", label: "Ajuda" },
     { href: "/dashboard/perfil/biometria", label: "Biometria" },
     ...(profile?.role === "admin"
       ? [
@@ -122,6 +124,7 @@ export default async function DashboardLayout({
           {/* Ações à direita */}
           <div className="flex shrink-0 items-center gap-2">
             <CommandPalette />
+            <HelpButton />
             <ThemeToggle />
             <NotificationsBell
               proximas={proximas}

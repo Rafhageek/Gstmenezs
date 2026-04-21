@@ -12,10 +12,12 @@ interface DataTableProps {
   /** Tipo do empty state (para fallback automático). */
   emptyTipo?: Parameters<typeof EmptyState>[0]["tipo"];
   /**
-   * Torna cada linha clicável. Recebe o índice da linha e retorna o href.
+   * Torna cada linha clicável. Array paralelo a `rows` com o href de cada linha
+   * (ou null/undefined pra pular). Precisa ser array serializável (não função)
+   * porque DataTable é client component.
    * Links/botões internos continuam funcionando normalmente (não propagam).
    */
-  rowHref?: (rowIndex: number) => string | null | undefined;
+  rowHrefs?: (string | null | undefined)[];
 }
 
 export function DataTable({
@@ -23,7 +25,7 @@ export function DataTable({
   rows,
   empty,
   emptyTipo = "generic",
-  rowHref,
+  rowHrefs,
 }: DataTableProps) {
   const router = useRouter();
 
@@ -68,7 +70,7 @@ export function DataTable({
         </thead>
         <tbody>
           {rows.map((row, i) => {
-            const href = rowHref?.(i) ?? null;
+            const href = rowHrefs?.[i] ?? null;
             const isClickable = Boolean(href);
             return (
               <tr

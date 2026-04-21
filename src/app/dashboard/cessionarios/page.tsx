@@ -151,7 +151,7 @@ export default async function CessionariosPage({
       </div>
 
       <DataTable
-        rowHref={(i) => `/dashboard/cessionarios/${cessionarios[i].id}`}
+        rowHrefs={cessionarios.map((c) => `/dashboard/cessionarios/${c.id}`)}
         headers={[
           "Nº",
           <SortableHeader key="nome" label="Nome" column="nome" />,

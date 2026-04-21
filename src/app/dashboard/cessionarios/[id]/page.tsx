@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/ui/page-header";
 import { DataTable } from "@/components/ui/data-table";
 import { Badge } from "@/components/ui/feedback";
+import { CessoesPizzaChart } from "@/components/charts/cessoes-pizza-chart";
 import { formatBRL, formatDataBR, formatDocumento } from "@/lib/format";
 import type { Cessionario, CessaoResumo } from "@/types/database";
 
@@ -46,28 +47,59 @@ export default async function CessionarioDetalhesPage({ params }: Props) {
     { total: 0, recebido: 0, saldo: 0 },
   );
 
-  // Busca a ultima data de pagamento de cada cessao desta lista
-  const ultimaDataPorCessao = new Map<string, string>();
+  // Busca TODOS os pagamentos efetivados das cessoes desse cessionario
+  type Pago = {
+    cessao_id: string;
+    data_pagamento: string;
+    valor: number;
+    is_reversal: boolean;
+  };
+
+  let pagamentosPagos: Pago[] = [];
   if (lista.length > 0) {
     const { data: pagsRaw } = await supabase
       .from("pagamentos")
-      .select("cessao_id, data_pagamento")
+      .select("cessao_id, data_pagamento, valor, is_reversal")
       .in(
         "cessao_id",
         lista.map((c) => c.id),
       )
       .not("data_pagamento", "is", null)
-      .order("data_pagamento", { ascending: false });
+      .order("data_pagamento", { ascending: true });
 
-    for (const p of (pagsRaw ?? []) as {
-      cessao_id: string;
-      data_pagamento: string;
-    }[]) {
-      if (!ultimaDataPorCessao.has(p.cessao_id)) {
-        ultimaDataPorCessao.set(p.cessao_id, p.data_pagamento);
-      }
+    pagamentosPagos = (pagsRaw ?? []) as Pago[];
+  }
+
+  // Ultima data por cessao (mantido pra tabela "Cessoes recebidas")
+  const ultimaDataPorCessao = new Map<string, string>();
+  for (const p of [...pagamentosPagos].reverse()) {
+    if (!ultimaDataPorCessao.has(p.cessao_id)) {
+      ultimaDataPorCessao.set(p.cessao_id, p.data_pagamento);
     }
   }
+
+  // Extrato de recebimentos com saldo running (total das cessoes - acumulado)
+  type Recebimento = {
+    data: string;
+    valor: number;
+    saldo: number;
+  };
+  const extrato: Recebimento[] = [];
+  let acumulado = 0;
+  for (const p of pagamentosPagos) {
+    const val = p.is_reversal ? -Number(p.valor) : Number(p.valor);
+    acumulado += val;
+    extrato.push({
+      data: p.data_pagamento,
+      valor: val,
+      saldo: totais.total - acumulado,
+    });
+  }
+
+  const pizzaData = [
+    { name: "Total recebido", value: totais.recebido },
+    { name: "Total a receber", value: totais.saldo },
+  ].filter((d) => d.value > 0);
 
   return (
     <div>
@@ -99,6 +131,75 @@ export default async function CessionarioDetalhesPage({ params }: Props) {
           accent="gold"
         />
         <Kpi label="Cessões" value={String(lista.length)} />
+      </section>
+
+      {/* Pizza (Total recebido vs a receber) + Extrato de recebimentos */}
+      <section className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2">
+        <div>
+          {pizzaData.length > 0 ? (
+            <CessoesPizzaChart
+              subtitulo={`${formatBRL(totais.recebido)} recebido · ${formatBRL(totais.saldo)} a receber`}
+              data={pizzaData}
+              colors={["#10b981", "#c9a961"]}
+            />
+          ) : (
+            <div className="flex h-full min-h-[220px] items-center justify-center rounded-xl border border-dashed border-[var(--border)] bg-[var(--background-elevated)]/40 p-5 text-center text-sm text-[var(--muted)]">
+              Sem dados suficientes para o gráfico.
+            </div>
+          )}
+        </div>
+
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--background-elevated)] p-5">
+          <header className="mb-3 flex items-end justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-wide text-[var(--muted)]">
+                Extrato de recebimentos
+              </p>
+              <p className="mt-0.5 text-xs text-[var(--muted)]/70">
+                {extrato.length} lançamento{extrato.length === 1 ? "" : "s"} efetivado{extrato.length === 1 ? "" : "s"}
+              </p>
+            </div>
+          </header>
+
+          {extrato.length === 0 ? (
+            <p className="py-6 text-center text-sm text-[var(--muted)]">
+              Nenhum pagamento registrado ainda.
+            </p>
+          ) : (
+            <div className="max-h-[280px] overflow-auto rounded-lg border border-[var(--border)]">
+              <table className="w-full text-xs">
+                <thead className="sticky top-0 bg-black/40 text-left uppercase tracking-wide text-[var(--muted)]">
+                  <tr>
+                    <th className="px-3 py-2 font-medium">Data</th>
+                    <th className="px-3 py-2 text-right font-medium">
+                      Recebimento
+                    </th>
+                    <th className="px-3 py-2 text-right font-medium">Saldo</th>
+                  </tr>
+                </thead>
+                <tbody className="font-mono">
+                  {extrato.map((r, i) => (
+                    <tr key={i} className="border-t border-[var(--border)]/60">
+                      <td className="px-3 py-2">{formatDataBR(r.data)}</td>
+                      <td
+                        className={`px-3 py-2 text-right ${
+                          r.valor >= 0
+                            ? "text-[var(--success)]"
+                            : "text-[var(--danger)]"
+                        }`}
+                      >
+                        {formatBRL(r.valor)}
+                      </td>
+                      <td className="px-3 py-2 text-right text-[var(--muted)]">
+                        {formatBRL(r.saldo)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </section>
 
       {cessionario.observacoes && (

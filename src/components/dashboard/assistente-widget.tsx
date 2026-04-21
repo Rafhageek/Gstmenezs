@@ -76,7 +76,7 @@ export function AssistenteWidget() {
         />
         <h3 className="text-sm font-semibold">Assistente</h3>
         <span className="ml-auto text-[10px] text-[var(--muted)]">
-          IA · Claude Haiku
+          Assistente local
         </span>
       </header>
 

@@ -15,7 +15,7 @@ interface PizzaData {
 }
 
 interface Props {
-  titulo: string;
+  titulo?: string;
   subtitulo?: string;
   data: PizzaData[];
   /** Cores em ordem de prioridade. */
@@ -41,14 +41,18 @@ export function CessoesPizzaChart({
 
   return (
     <div className="rounded-xl border border-[var(--border)] bg-[var(--background-elevated)] p-5">
-      <header className="mb-4">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">
-          {titulo}
-        </h3>
-        {subtitulo && (
-          <p className="mt-1 text-xs text-[var(--muted)]/70">{subtitulo}</p>
-        )}
-      </header>
+      {(titulo || subtitulo) && (
+        <header className="mb-4">
+          {titulo && (
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">
+              {titulo}
+            </h3>
+          )}
+          {subtitulo && (
+            <p className="mt-1 text-xs text-[var(--muted)]/70">{subtitulo}</p>
+          )}
+        </header>
+      )}
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="h-56 w-full">

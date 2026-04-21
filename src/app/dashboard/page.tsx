@@ -139,18 +139,18 @@ export default async function DashboardPage({
 
   return (
     <div>
-      <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-4xl font-semibold tracking-tight md:text-5xl">
-            Visão geral
-          </h1>
-          {labelPeriodo && (
-            <p className="mt-2 text-sm text-[var(--gold)]">
-              Filtrado por: <strong>{labelPeriodo}</strong>
-            </p>
-          )}
+      <header className="mb-8 text-center">
+        <h1 className="text-4xl font-semibold tracking-tight md:text-5xl">
+          Visão geral
+        </h1>
+        {labelPeriodo && (
+          <p className="mt-2 text-sm text-[var(--gold)]">
+            Filtrado por: <strong>{labelPeriodo}</strong>
+          </p>
+        )}
+        <div className="mt-5 flex justify-center">
+          <MonthYearFilter label="Período" />
         </div>
-        <MonthYearFilter label="Período" />
       </header>
 
       {/* 3 KPIs na mesma simetria (Saldo a receber | Valores recebidos | Valor a receber) */}
@@ -232,11 +232,10 @@ export default async function DashboardPage({
         <FluxoMensalChart data={fluxo} />
       </section>
 
-      {/* Pizza Visão geral (centralizada) */}
+      {/* Pizza (centralizada, sem titulo redundante) */}
       <section className="mt-6 flex justify-center">
         <div className="w-full max-w-2xl">
           <CessoesPizzaChart
-            titulo="Visão geral"
             subtitulo={`${resumoGeral?.qtd_liquidadas ?? liquidadasNoFiltro.length} liquidada${
               (resumoGeral?.qtd_liquidadas ?? liquidadasNoFiltro.length) === 1 ? "" : "s"
             } · ${resumoGeral?.qtd_a_receber ?? cessoesAtivas.length} a receber`}

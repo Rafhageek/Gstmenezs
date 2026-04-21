@@ -2,15 +2,14 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { FluxoMensalChart } from "@/components/charts/fluxo-mensal-chart";
 import { CessoesPizzaChart } from "@/components/charts/cessoes-pizza-chart";
-import { SessoesLiquidadas } from "@/components/dashboard/sessoes-liquidadas";
 import { AnimatedCounter } from "@/components/ui/animated-counter";
+import { MonthYearFilter } from "@/components/ui/month-year-filter";
 import { formatBRL } from "@/lib/format";
 import type {
   CessaoResumo,
   FluxoMensal,
   InadimplenciaItem,
   ComparativoMes,
-  CessaoLiquidada,
   ResumoGeral,
 } from "@/types/database";
 
@@ -18,22 +17,67 @@ export const metadata = {
   title: "Visão geral — Painel MNZ",
 };
 
-export default async function DashboardPage() {
+const MESES_NOMES = [
+  "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
+];
+
+function pad2(n: number) {
+  return String(n).padStart(2, "0");
+}
+
+function ultimoDiaMes(ano: number, mes: number): string {
+  const d = new Date(ano, mes, 0);
+  return `${ano}-${pad2(mes)}-${pad2(d.getDate())}`;
+}
+
+interface DashboardSP {
+  mes?: string;
+  ano?: string;
+}
+
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<DashboardSP>;
+}) {
+  const sp = await searchParams;
+  const mesNum = sp.mes ? Number(sp.mes) : null;
+  const anoNum = sp.ano ? Number(sp.ano) : null;
+
+  // Calcula range de filtro por data_cessao
+  let dataDe: string | null = null;
+  let dataAte: string | null = null;
+  let labelPeriodo: string | null = null;
+
+  if (anoNum && mesNum) {
+    dataDe = `${anoNum}-${pad2(mesNum)}-01`;
+    dataAte = ultimoDiaMes(anoNum, mesNum);
+    labelPeriodo = `${MESES_NOMES[mesNum - 1]}/${anoNum}`;
+  } else if (anoNum) {
+    dataDe = `${anoNum}-01-01`;
+    dataAte = `${anoNum}-12-31`;
+    labelPeriodo = `Ano ${anoNum}`;
+  }
+
   const supabase = await createClient();
+
+  let cessoesQuery = supabase
+    .from("v_cessoes_resumo")
+    .select("*")
+    .order("data_vencimento_inicial", { ascending: true });
+
+  if (dataDe) cessoesQuery = cessoesQuery.gte("data_cessao", dataDe);
+  if (dataAte) cessoesQuery = cessoesQuery.lte("data_cessao", dataAte);
 
   const [
     cessoesRes,
     fluxoRes,
     inadRes,
     compRes,
-    liquidadasRes,
     resumoRes,
   ] = await Promise.all([
-    supabase
-      .from("v_cessoes_resumo")
-      .select("*")
-      .order("data_vencimento_inicial", { ascending: true })
-      .returns<CessaoResumo[]>(),
+    cessoesQuery.returns<CessaoResumo[]>(),
     supabase.from("v_fluxo_mensal").select("*").returns<FluxoMensal[]>(),
     supabase
       .from("v_inadimplencia")
@@ -43,10 +87,6 @@ export default async function DashboardPage() {
       .from("v_comparativo_mes")
       .select("*")
       .maybeSingle<ComparativoMes>(),
-    supabase
-      .from("v_cessoes_liquidadas")
-      .select("*")
-      .returns<CessaoLiquidada[]>(),
     supabase.from("v_resumo_geral").select("*").maybeSingle<ResumoGeral>(),
   ]);
 
@@ -58,11 +98,11 @@ export default async function DashboardPage() {
   const fluxo = fluxoRes.data ?? [];
   const inadimplentes = inadRes.data ?? [];
   const comparativo = compRes.data;
-  const liquidadas = liquidadasRes.data ?? [];
   const resumoGeral = resumoRes.data;
 
   const cessoesAtivas = cessoes.filter((c) => c.status !== "quitada");
-  const valorLiquidado = liquidadas.reduce(
+  const liquidadasNoFiltro = cessoes.filter((c) => c.status === "quitada");
+  const valorLiquidado = liquidadasNoFiltro.reduce(
     (sum, c) => sum + Number(c.valor_total),
     0,
   );
@@ -99,19 +139,19 @@ export default async function DashboardPage() {
 
   return (
     <div>
-      <header className="mb-8">
-        <h1 className="text-4xl font-semibold tracking-tight md:text-5xl">
-          Visão geral
-        </h1>
-        <p className="mt-2 text-sm text-[var(--muted)]">
-          Painel financeiro consolidado de todas as cessões de crédito.
-        </p>
+      <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-4xl font-semibold tracking-tight md:text-5xl">
+            Visão geral
+          </h1>
+          {labelPeriodo && (
+            <p className="mt-2 text-sm text-[var(--gold)]">
+              Filtrado por: <strong>{labelPeriodo}</strong>
+            </p>
+          )}
+        </div>
+        <MonthYearFilter label="Período" />
       </header>
-
-      {/* Sessoes liquidadas — topo */}
-      <section className="mb-6">
-        <SessoesLiquidadas cessoes={liquidadas} valorTotal={valorLiquidado} />
-      </section>
 
       {/* 3 KPIs na mesma simetria (Saldo a receber | Valores recebidos | Valor a receber) */}
       <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -197,8 +237,8 @@ export default async function DashboardPage() {
         <div className="w-full max-w-2xl">
           <CessoesPizzaChart
             titulo="Visão geral"
-            subtitulo={`${resumoGeral?.qtd_liquidadas ?? liquidadas.length} liquidada${
-              (resumoGeral?.qtd_liquidadas ?? liquidadas.length) === 1 ? "" : "s"
+            subtitulo={`${resumoGeral?.qtd_liquidadas ?? liquidadasNoFiltro.length} liquidada${
+              (resumoGeral?.qtd_liquidadas ?? liquidadasNoFiltro.length) === 1 ? "" : "s"
             } · ${resumoGeral?.qtd_a_receber ?? cessoesAtivas.length} a receber`}
             data={graficoGeral}
             colors={["#c9a961", "#10b981"]}

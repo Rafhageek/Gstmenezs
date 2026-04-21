@@ -58,9 +58,6 @@ export default async function DashboardLayout({
     { href: "/dashboard", label: "Visão geral" },
     { href: "/dashboard/clientes", label: "Clientes" },
     { href: "/dashboard/cessionarios", label: "Cessionários" },
-    { href: "/dashboard/cessoes", label: "Cessões" },
-    { href: "/dashboard/pagamentos", label: "Pagamentos" },
-    { href: "/dashboard/agenda", label: "Agenda" },
     { href: "/dashboard/relatorios", label: "Relatórios" },
     { href: "/dashboard/perfil/biometria", label: "Biometria" },
     ...(profile?.role === "admin"
@@ -115,27 +112,6 @@ export default async function DashboardLayout({
                   href: "/dashboard/cessionarios",
                   label: "Cessionários",
                   descricao: "Recebedores das cessões",
-                },
-              ]}
-            />
-
-            <NavDropdown
-              label="Operação"
-              items={[
-                {
-                  href: "/dashboard/cessoes",
-                  label: "Cessões",
-                  descricao: "Contratos de cessão de crédito",
-                },
-                {
-                  href: "/dashboard/pagamentos",
-                  label: "Pagamentos",
-                  descricao: "Parcelas e comprovantes",
-                },
-                {
-                  href: "/dashboard/agenda",
-                  label: "Agenda",
-                  descricao: "Vencimentos do mês",
                 },
               ]}
             />

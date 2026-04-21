@@ -101,6 +101,10 @@ export default async function CessionarioDetalhesPage({ params }: Props) {
     { name: "Total a receber", value: totais.saldo },
   ].filter((d) => d.value > 0);
 
+  const pctRecebido =
+    totais.total > 0 ? (totais.recebido / totais.total) * 100 : 0;
+  const pctAReceber = 100 - pctRecebido;
+
   return (
     <div>
       <PageHeader
@@ -135,16 +139,36 @@ export default async function CessionarioDetalhesPage({ params }: Props) {
 
       {/* Pizza (Total recebido vs a receber) + Extrato de recebimentos */}
       <section className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2">
-        <div>
+        <div className="flex flex-col gap-4">
           {pizzaData.length > 0 ? (
             <CessoesPizzaChart
-              subtitulo={`${formatBRL(totais.recebido)} recebido · ${formatBRL(totais.saldo)} a receber`}
+              subtitulo={`${pctRecebido.toFixed(1)}% recebido · ${pctAReceber.toFixed(1)}% a receber`}
               data={pizzaData}
               colors={["#10b981", "#c9a961"]}
             />
           ) : (
-            <div className="flex h-full min-h-[220px] items-center justify-center rounded-xl border border-dashed border-[var(--border)] bg-[var(--background-elevated)]/40 p-5 text-center text-sm text-[var(--muted)]">
+            <div className="flex min-h-[220px] items-center justify-center rounded-xl border border-dashed border-[var(--border)] bg-[var(--background-elevated)]/40 p-5 text-center text-sm text-[var(--muted)]">
               Sem dados suficientes para o gráfico.
+            </div>
+          )}
+
+          {/* Card % Cedida — fatia do credito total do cedente */}
+          {cessionario.percentual != null && (
+            <div className="rounded-xl border border-[var(--gold)]/30 bg-[var(--gold)]/5 p-5">
+              <p className="text-xs uppercase tracking-wide text-[var(--gold)]">
+                % Cedida a este cessionário
+              </p>
+              <p className="mt-2 text-3xl font-semibold font-mono text-[var(--gold)]">
+                {Number(cessionario.percentual).toLocaleString("pt-BR", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 4,
+                })}
+                %
+              </p>
+              <p className="mt-1 text-xs text-[var(--muted)]">
+                Fatia do crédito total do cliente cedente — é uma proporção,
+                não a % paga vs a receber.
+              </p>
             </div>
           )}
         </div>

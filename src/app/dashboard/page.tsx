@@ -4,6 +4,7 @@ import { FluxoMensalChart } from "@/components/charts/fluxo-mensal-chart";
 import { CessoesPizzaChart } from "@/components/charts/cessoes-pizza-chart";
 import { AnimatedCounter } from "@/components/ui/animated-counter";
 import { MonthYearFilter } from "@/components/ui/month-year-filter";
+import { AssistenteWidget } from "@/components/dashboard/assistente-widget";
 import { formatBRL } from "@/lib/format";
 import type {
   CessaoResumo,
@@ -232,17 +233,16 @@ export default async function DashboardPage({
         <FluxoMensalChart data={fluxo} />
       </section>
 
-      {/* Pizza (centralizada, sem titulo redundante) */}
-      <section className="mt-6 flex justify-center">
-        <div className="w-full max-w-2xl">
-          <CessoesPizzaChart
-            subtitulo={`${resumoGeral?.qtd_liquidadas ?? liquidadasNoFiltro.length} liquidada${
-              (resumoGeral?.qtd_liquidadas ?? liquidadasNoFiltro.length) === 1 ? "" : "s"
-            } · ${resumoGeral?.qtd_a_receber ?? cessoesAtivas.length} a receber`}
-            data={graficoGeral}
-            colors={["#c9a961", "#10b981"]}
-          />
-        </div>
+      {/* Pizza + Assistente IA lado a lado */}
+      <section className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <CessoesPizzaChart
+          subtitulo={`${resumoGeral?.qtd_liquidadas ?? liquidadasNoFiltro.length} liquidada${
+            (resumoGeral?.qtd_liquidadas ?? liquidadasNoFiltro.length) === 1 ? "" : "s"
+          } · ${resumoGeral?.qtd_a_receber ?? cessoesAtivas.length} a receber`}
+          data={graficoGeral}
+          colors={["#c9a961", "#10b981"]}
+        />
+        <AssistenteWidget />
       </section>
     </div>
   );

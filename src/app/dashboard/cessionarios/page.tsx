@@ -91,13 +91,16 @@ export default async function CessionariosPage({
       .gte("data_contrato", `${anoNum}-01-01`)
       .lte("data_contrato", `${anoNum}-12-31`);
   } else if (mesNum) {
-    // so mes (sem ano) → usa filter textual que bate mes em qualquer ano
-    // data_contrato tem formato YYYY-MM-DD; o substring de MM esta na posicao 6-7
-    query = query.filter(
-      "data_contrato",
-      "like",
-      `%-${pad2(mesNum)}-%`,
-    );
+    // so mes (sem ano) → faz OR de ranges para uma janela de anos
+    const anoAtual = new Date().getFullYear();
+    const anosJanela = Array.from({ length: 11 }, (_, i) => anoAtual - 5 + i);
+    const orClauses = anosJanela
+      .map(
+        (a) =>
+          `and(data_contrato.gte.${a}-${pad2(mesNum)}-01,data_contrato.lte.${ultimoDiaMes(a, mesNum)})`,
+      )
+      .join(",");
+    query = query.or(orClauses);
   }
 
   // Filtro por status ativo/inativo

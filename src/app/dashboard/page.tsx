@@ -1,12 +1,9 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { Badge } from "@/components/ui/feedback";
 import { FluxoMensalChart } from "@/components/charts/fluxo-mensal-chart";
 import { CessoesPizzaChart } from "@/components/charts/cessoes-pizza-chart";
-import { CessaoProgressoPizza } from "@/components/charts/cessao-progresso-pizza";
 import { SessoesLiquidadas } from "@/components/dashboard/sessoes-liquidadas";
 import { AnimatedCounter } from "@/components/ui/animated-counter";
-import { EmptyState } from "@/components/ui/empty-state";
 import { formatBRL } from "@/lib/format";
 import type {
   CessaoResumo,
@@ -94,15 +91,6 @@ export default async function DashboardPage() {
     ).length,
     canceladas: cessoes.filter((c) => c.status === "cancelada").length,
   };
-
-  // Pizza por status (top 6 cessões por valor)
-  const topCessoes = [...cessoes]
-    .sort((a, b) => Number(b.valor_total) - Number(a.valor_total))
-    .slice(0, 6)
-    .map((c) => ({
-      name: `${c.numero_contrato} — ${truncate(c.cliente_nome, 18)}`,
-      value: Number(c.valor_total),
-    }));
 
   const graficoGeral = [
     { name: "A receber", value: Number(resumoGeral?.valor_a_receber ?? totais.saldo) },
@@ -204,104 +192,21 @@ export default async function DashboardPage() {
         <FluxoMensalChart data={fluxo} />
       </section>
 
-      {/* Pizza cessões — geral (liquidadas vs a receber) + top 6 */}
-      <section className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <CessoesPizzaChart
-          titulo="Visão geral"
-          subtitulo={`${resumoGeral?.qtd_liquidadas ?? liquidadas.length} liquidada${
-            (resumoGeral?.qtd_liquidadas ?? liquidadas.length) === 1 ? "" : "s"
-          } · ${resumoGeral?.qtd_a_receber ?? cessoesAtivas.length} a receber`}
-          data={graficoGeral}
-          colors={["#c9a961", "#10b981"]}
-        />
-        <CessoesPizzaChart
-          titulo="Maiores cessões"
-          subtitulo="Top 6 por volume"
-          data={topCessoes}
-        />
-      </section>
-
-      {/* Lista de cessões a receber — quitadas aparecem em "Sessoes Liquidadas" no topo */}
-      <section className="mt-10">
-        <header className="mb-4 flex items-center justify-between">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">
-            Cessões a receber ({cessoesAtivas.length})
-          </h2>
-          <Link
-            href="/dashboard/cessoes"
-            className="text-xs text-[var(--gold)] hover:underline"
-          >
-            Gerenciar →
-          </Link>
-        </header>
-
-        {cessoesAtivas.length === 0 ? (
-          <EmptyState tipo="cessoes" />
-        ) : (
-          <div className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--background-elevated)]">
-            <table className="w-full text-sm">
-              <thead className="bg-black/30 text-left text-xs uppercase tracking-wide text-[var(--muted)]">
-                <tr>
-                  <th className="px-4 py-3 font-medium">Progresso</th>
-                  <th className="px-4 py-3 font-medium">Contrato</th>
-                  <th className="px-4 py-3 font-medium">Cliente / Cessionário</th>
-                  <th className="px-4 py-3 text-right font-medium">Total</th>
-                  <th className="px-4 py-3 text-right font-medium">Pago</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {cessoesAtivas.map((c) => (
-                  <tr
-                    key={c.id}
-                    className="border-t border-[var(--border)] hover:bg-black/20"
-                  >
-                    <td className="px-4 py-3">
-                      <CessaoProgressoPizza
-                        valorPago={Number(c.valor_pago)}
-                        saldoDevedor={Number(c.saldo_devedor)}
-                        size={56}
-                      />
-                    </td>
-                    <td className="px-4 py-3 font-mono text-xs">
-                      <Link
-                        href={`/dashboard/cessoes/${c.id}`}
-                        className="text-[var(--gold)] hover:underline"
-                      >
-                        {c.numero_contrato}
-                      </Link>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="font-medium">{c.cliente_nome}</div>
-                      <div className="text-xs text-[var(--muted)]">
-                        → {c.cessionario_nome}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-right font-mono">
-                      {formatBRL(c.valor_total)}
-                    </td>
-                    <td className="px-4 py-3 text-right font-mono text-[var(--success)]">
-                      {formatBRL(c.valor_pago)}
-                    </td>
-                    <td className="px-4 py-3">
-                      <StatusBadge
-                        status={c.status}
-                        atrasado={!!c.primeira_parcela_atrasada}
-                      />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+      {/* Pizza Visão geral (centralizada) */}
+      <section className="mt-6 flex justify-center">
+        <div className="w-full max-w-2xl">
+          <CessoesPizzaChart
+            titulo="Visão geral"
+            subtitulo={`${resumoGeral?.qtd_liquidadas ?? liquidadas.length} liquidada${
+              (resumoGeral?.qtd_liquidadas ?? liquidadas.length) === 1 ? "" : "s"
+            } · ${resumoGeral?.qtd_a_receber ?? cessoesAtivas.length} a receber`}
+            data={graficoGeral}
+            colors={["#c9a961", "#10b981"]}
+          />
+        </div>
       </section>
     </div>
   );
-}
-
-function truncate(s: string, n: number): string {
-  return s.length > n ? `${s.slice(0, n - 1)}…` : s;
 }
 
 function Contador({
@@ -369,24 +274,6 @@ function KpiAnimado({
   );
 }
 
-function StatusBadge({
-  status,
-  atrasado,
-}: {
-  status: CessaoResumo["status"];
-  atrasado: boolean;
-}) {
-  if (atrasado && status === "ativa") {
-    return <Badge variant="warning">A receber (vencida)</Badge>;
-  }
-  const map: Record<CessaoResumo["status"], React.ReactNode> = {
-    ativa: <Badge variant="gold">A receber</Badge>,
-    quitada: <Badge variant="success">Liquidada</Badge>,
-    inadimplente: <Badge variant="danger">Inadimplente</Badge>,
-    cancelada: <Badge variant="neutral">Cancelada</Badge>,
-  };
-  return map[status];
-}
 
 function SchemaPendente({ erro }: { erro: string }) {
   return (

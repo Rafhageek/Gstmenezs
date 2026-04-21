@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { DataTable } from "@/components/ui/data-table";
 import { Badge } from "@/components/ui/feedback";
 import { CessoesPizzaChart } from "@/components/charts/cessoes-pizza-chart";
+import { DonutPct } from "@/components/charts/donut-pct";
 import { formatBRL, formatDataBR, formatDocumento } from "@/lib/format";
 import type { Cessionario, CessaoResumo } from "@/types/database";
 
@@ -137,44 +138,30 @@ export default async function CessionarioDetalhesPage({ params }: Props) {
         <Kpi label="Cessões" value={String(lista.length)} />
       </section>
 
-      {/* Pizza (Total recebido vs a receber) + Extrato de recebimentos */}
-      <section className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2">
-        <div className="flex flex-col gap-4">
-          {pizzaData.length > 0 ? (
-            <CessoesPizzaChart
-              subtitulo={`${pctRecebido.toFixed(1)}% recebido · ${pctAReceber.toFixed(1)}% a receber`}
-              data={pizzaData}
-              colors={["#10b981", "#c9a961"]}
-              centerLabel={`${pctRecebido.toFixed(1)}%`}
-              centerSub="recebido"
-            />
-          ) : (
-            <div className="flex min-h-[220px] items-center justify-center rounded-xl border border-dashed border-[var(--border)] bg-[var(--background-elevated)]/40 p-5 text-center text-sm text-[var(--muted)]">
-              Sem dados suficientes para o gráfico.
-            </div>
-          )}
+      {/* 2 pizzas (valores + %) + Extrato */}
+      <section className="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
+        {/* Pizza com valores absolutos */}
+        {pizzaData.length > 0 ? (
+          <CessoesPizzaChart
+            titulo="Total recebido vs a receber"
+            subtitulo={`${formatBRL(totais.recebido)} · ${formatBRL(totais.saldo)}`}
+            data={pizzaData}
+            colors={["#10b981", "#c9a961"]}
+          />
+        ) : (
+          <div className="flex min-h-[220px] items-center justify-center rounded-xl border border-dashed border-[var(--border)] bg-[var(--background-elevated)]/40 p-5 text-center text-sm text-[var(--muted)]">
+            Sem dados suficientes para o gráfico.
+          </div>
+        )}
 
-          {/* Card % Cedida — fatia do credito total do cedente */}
-          {cessionario.percentual != null && (
-            <div className="rounded-xl border border-[var(--gold)]/30 bg-[var(--gold)]/5 p-5">
-              <p className="text-xs uppercase tracking-wide text-[var(--gold)]">
-                % Cedida a este cessionário
-              </p>
-              <p className="mt-2 text-3xl font-semibold font-mono text-[var(--gold)]">
-                {Number(cessionario.percentual).toLocaleString("pt-BR", {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 4,
-                })}
-                %
-              </p>
-              <p className="mt-1 text-xs text-[var(--muted)]">
-                Fatia do crédito total do cliente cedente — é uma proporção,
-                não a % paga vs a receber.
-              </p>
-            </div>
-          )}
-        </div>
+        {/* Donut só com % */}
+        <DonutPct
+          pctRecebido={pctRecebido}
+          titulo="% Recebido"
+          legenda="do total"
+        />
 
+        {/* Extrato */}
         <div className="rounded-xl border border-[var(--border)] bg-[var(--background-elevated)] p-5">
           <header className="mb-3 flex items-end justify-between">
             <div>
@@ -182,7 +169,7 @@ export default async function CessionarioDetalhesPage({ params }: Props) {
                 Extrato de recebimentos
               </p>
               <p className="mt-0.5 text-xs text-[var(--muted)]/70">
-                {extrato.length} lançamento{extrato.length === 1 ? "" : "s"} efetivado{extrato.length === 1 ? "" : "s"}
+                {extrato.length} lançamento{extrato.length === 1 ? "" : "s"}
               </p>
             </div>
           </header>
@@ -227,6 +214,26 @@ export default async function CessionarioDetalhesPage({ params }: Props) {
           )}
         </div>
       </section>
+
+      {/* Card % Cedida — em linha propria, largura total */}
+      {cessionario.percentual != null && (
+        <section className="mb-8 rounded-xl border border-[var(--gold)]/30 bg-[var(--gold)]/5 p-5">
+          <p className="text-xs uppercase tracking-wide text-[var(--gold)]">
+            % Cedida a este cessionário
+          </p>
+          <p className="mt-2 text-3xl font-semibold font-mono text-[var(--gold)]">
+            {Number(cessionario.percentual).toLocaleString("pt-BR", {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 4,
+            })}
+            %
+          </p>
+          <p className="mt-1 text-xs text-[var(--muted)]">
+            Fatia do crédito total do cliente cedente — é uma proporção, não
+            a % paga vs a receber.
+          </p>
+        </section>
+      )}
 
       {cessionario.observacoes && (
         <section className="mb-8 rounded-xl border border-[var(--border)] bg-[var(--background-elevated)] p-5">

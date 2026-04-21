@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { askGemini, isGeminiEnabled } from "@/lib/chat/gemini";
+import { buildPainelSnapshot, DOMINIO_PROMPT } from "@/lib/chat/snapshot";
 
 export const runtime = "nodejs";
 
@@ -396,17 +398,37 @@ export async function POST(req: Request) {
 
     const perguntaNorm = normalize(ultima.content);
 
-    // Tenta matchers fixos
+    // Tenta matchers fixos (fast path — resposta instantânea, zero tokens)
     for (const intent of INTENTS) {
       if (intent.match(perguntaNorm)) {
         const reply = await intent.respond({ supabase, pergunta: perguntaNorm });
-        return Response.json({ reply, intent: intent.nome });
+        return Response.json({ reply, intent: intent.nome, source: "local" });
       }
     }
 
-    // Fallback: busca por nome no banco
+    // Fallback 1: Gemini com snapshot completo do painel
+    if (isGeminiEnabled()) {
+      try {
+        const snapshot = await buildPainelSnapshot(supabase);
+        const systemInstruction = `${DOMINIO_PROMPT}\n\n# Snapshot atual do painel\n\n${snapshot}`;
+        const reply = await askGemini(messages, systemInstruction);
+        if (reply) {
+          return Response.json({ reply, intent: "gemini", source: "gemini" });
+        }
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        console.error("[chat] gemini falhou, caindo para fallback:", msg);
+      }
+    }
+
+    // Fallback 2: busca por nome no banco
     const porNome = await tentarBuscarPorNome(supabase, perguntaNorm);
-    if (porNome) return Response.json({ reply: porNome, intent: "busca-nome" });
+    if (porNome)
+      return Response.json({
+        reply: porNome,
+        intent: "busca-nome",
+        source: "local",
+      });
 
     // Último fallback: resposta genérica com sugestões
     return Response.json({
@@ -421,6 +443,7 @@ export async function POST(req: Request) {
         "Ou digite o nome de um cliente/cessionário pra buscar.",
       ].join("\n"),
       intent: "fallback",
+      source: "local",
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Erro desconhecido";

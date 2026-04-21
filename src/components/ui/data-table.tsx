@@ -1,3 +1,6 @@
+"use client";
+
+import { useRouter } from "next/navigation";
 import { EmptyState } from "./empty-state";
 
 interface DataTableProps {
@@ -8,6 +11,11 @@ interface DataTableProps {
   empty?: React.ReactNode;
   /** Tipo do empty state (para fallback automático). */
   emptyTipo?: Parameters<typeof EmptyState>[0]["tipo"];
+  /**
+   * Torna cada linha clicável. Recebe o índice da linha e retorna o href.
+   * Links/botões internos continuam funcionando normalmente (não propagam).
+   */
+  rowHref?: (rowIndex: number) => string | null | undefined;
 }
 
 export function DataTable({
@@ -15,7 +23,10 @@ export function DataTable({
   rows,
   empty,
   emptyTipo = "generic",
+  rowHref,
 }: DataTableProps) {
+  const router = useRouter();
+
   if (rows.length === 0) {
     if (empty) {
       return (
@@ -25,6 +36,22 @@ export function DataTable({
       );
     }
     return <EmptyState tipo={emptyTipo} />;
+  }
+
+  function handleRowClick(e: React.MouseEvent<HTMLTableRowElement>, href: string) {
+    const target = e.target as HTMLElement;
+    // Ignora clique em links, botões, inputs etc — deixa o elemento nativo agir
+    if (target.closest("a, button, input, select, textarea, label")) return;
+    router.push(href);
+  }
+
+  function handleRowKey(e: React.KeyboardEvent<HTMLTableRowElement>, href: string) {
+    if (e.key === "Enter" || e.key === " ") {
+      const target = e.target as HTMLElement;
+      if (target.closest("a, button, input, select, textarea")) return;
+      e.preventDefault();
+      router.push(href);
+    }
   }
 
   return (
@@ -40,20 +67,40 @@ export function DataTable({
           </tr>
         </thead>
         <tbody>
-          {rows.map((row, i) => (
-            <tr
-              key={i}
-              className={`border-t border-[var(--border)] transition-colors ${
-                i % 2 === 1 ? "bg-black/[0.08]" : ""
-              } hover:bg-[var(--gold)]/[0.06]`}
-            >
-              {row.map((cell, j) => (
-                <td key={j} className="px-4 py-3 align-middle">
-                  {cell}
-                </td>
-              ))}
-            </tr>
-          ))}
+          {rows.map((row, i) => {
+            const href = rowHref?.(i) ?? null;
+            const isClickable = Boolean(href);
+            return (
+              <tr
+                key={i}
+                onClick={
+                  isClickable
+                    ? (e) => handleRowClick(e, href as string)
+                    : undefined
+                }
+                onKeyDown={
+                  isClickable
+                    ? (e) => handleRowKey(e, href as string)
+                    : undefined
+                }
+                tabIndex={isClickable ? 0 : undefined}
+                role={isClickable ? "link" : undefined}
+                className={`border-t border-[var(--border)] transition-colors ${
+                  i % 2 === 1 ? "bg-black/[0.08]" : ""
+                } hover:bg-[var(--gold)]/[0.06] ${
+                  isClickable
+                    ? "cursor-pointer focus:bg-[var(--gold)]/[0.08] focus:outline-none"
+                    : ""
+                }`}
+              >
+                {row.map((cell, j) => (
+                  <td key={j} className="px-4 py-3 align-middle">
+                    {cell}
+                  </td>
+                ))}
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>

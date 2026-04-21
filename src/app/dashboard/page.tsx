@@ -228,13 +228,8 @@ export default async function DashboardPage({
         </div>
       </section>
 
-      {/* Gráfico fluxo mensal (Aging removido a pedido do cliente) */}
-      <section className="mt-8">
-        <FluxoMensalChart data={fluxo} />
-      </section>
-
       {/* Pizza + Assistente IA lado a lado */}
-      <section className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <section className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
         <CessoesPizzaChart
           subtitulo={`${resumoGeral?.qtd_liquidadas ?? liquidadasNoFiltro.length} liquidada${
             (resumoGeral?.qtd_liquidadas ?? liquidadasNoFiltro.length) === 1 ? "" : "s"
@@ -243,6 +238,11 @@ export default async function DashboardPage({
           colors={["#c9a961", "#10b981"]}
         />
         <AssistenteWidget />
+      </section>
+
+      {/* Gráfico fluxo mensal (Aging removido a pedido do cliente) */}
+      <section className="mt-6">
+        <FluxoMensalChart data={fluxo} />
       </section>
     </div>
   );

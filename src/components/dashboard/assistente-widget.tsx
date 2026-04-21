@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 interface Msg {
   role: "user" | "assistant";
   content: string;
+  source?: "local" | "gemini";
 }
 
 const SUGESTOES = [
@@ -44,12 +45,19 @@ export function AssistenteWidget() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages: novas }),
       });
-      const data = (await res.json()) as { reply?: string; error?: string };
+      const data = (await res.json()) as {
+        reply?: string;
+        error?: string;
+        source?: "local" | "gemini";
+      };
       if (!res.ok || data.error) {
         setErro(data.error ?? "Erro ao consultar o assistente.");
         setMensagens(novas); // sem resposta
       } else if (data.reply) {
-        setMensagens([...novas, { role: "assistant", content: data.reply }]);
+        setMensagens([
+          ...novas,
+          { role: "assistant", content: data.reply, source: data.source },
+        ]);
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Falha de rede";
@@ -76,7 +84,7 @@ export function AssistenteWidget() {
         />
         <h3 className="text-sm font-semibold">Assistente</h3>
         <span className="ml-auto text-[10px] text-[var(--muted)]">
-          Assistente local
+          Local + Gemini
         </span>
       </header>
 
@@ -119,6 +127,11 @@ export function AssistenteWidget() {
               }`}
             >
               {m.content}
+              {m.role === "assistant" && m.source === "gemini" && (
+                <div className="mt-1.5 text-[9px] uppercase tracking-wider text-[var(--muted)]/70">
+                  ✦ via Gemini
+                </div>
+              )}
             </div>
           </div>
         ))}

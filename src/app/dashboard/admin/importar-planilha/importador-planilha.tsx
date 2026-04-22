@@ -27,6 +27,7 @@ export function ImportadorPlanilha({ clientes }: Props) {
   const [clienteId, setClienteId] = useState("");
   const [arquivos, setArquivos] = useState<File[]>([]);
   const [preview, setPreview] = useState<PreviewResult | null>(null);
+  const [selecionados, setSelecionados] = useState<Set<number>>(new Set());
   const [resumoFinal, setResumoFinal] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [parseando, setParseando] = useState(false);
@@ -101,6 +102,8 @@ export function ImportadorPlanilha({ clientes }: Props) {
         erros,
       };
       setPreview(res);
+      // Por padrão, pré-seleciona todos
+      setSelecionados(new Set(previews.map((_, i) => i)));
       setEtapa("preview");
       if (res.cessionarios.length === 0) {
         toast.error("Nenhum cessionário válido encontrado nos arquivos.");
@@ -110,12 +113,47 @@ export function ImportadorPlanilha({ clientes }: Props) {
     }
   }
 
+  function toggleSelecionado(idx: number) {
+    setSelecionados((prev) => {
+      const nova = new Set(prev);
+      if (nova.has(idx)) nova.delete(idx);
+      else nova.add(idx);
+      return nova;
+    });
+  }
+
+  function selecionarTodos() {
+    if (!preview) return;
+    setSelecionados(new Set(preview.cessionarios.map((_, i) => i)));
+  }
+
+  function desmarcarTodos() {
+    setSelecionados(new Set());
+  }
+
+  /** Pré-seleção inteligente: só cessionários cujo último pagamento é em 2025 ou 2026 */
+  function selecionarAtivos() {
+    if (!preview) return;
+    const nova = new Set<number>();
+    preview.cessionarios.forEach((c, i) => {
+      const ultima = c.pagamentos[c.pagamentos.length - 1]?.data ?? "";
+      if (ultima.startsWith("2025") || ultima.startsWith("2026")) nova.add(i);
+    });
+    setSelecionados(nova);
+  }
+
   function handleImportar() {
     if (!preview || !clienteId) return;
-    if (preview.cessionarios.length === 0) return;
+    const cessionariosFinal = preview.cessionarios.filter((_, i) =>
+      selecionados.has(i),
+    );
+    if (cessionariosFinal.length === 0) {
+      toast.error("Selecione ao menos 1 cessionário para importar.");
+      return;
+    }
 
     const confirmacao = confirm(
-      `Importar ${preview.cessionarios.length} cessionário(s) e ${preview.cessionarios.reduce(
+      `Importar ${cessionariosFinal.length} cessionário(s) e ${cessionariosFinal.reduce(
         (s, c) => s + c.pagamentos.length,
         0,
       )} pagamento(s) para o cliente "${clienteSelecionado?.nome}"?`,
@@ -125,7 +163,7 @@ export function ImportadorPlanilha({ clientes }: Props) {
     startTransition(async () => {
       const res = await importarPlanilhaHistorico(
         clienteId,
-        preview.cessionarios,
+        cessionariosFinal,
       );
       if (res.falhas.length > 0) {
         toast.error(`${res.falhas.length} cessionário(s) falharam`, {
@@ -193,22 +231,59 @@ export function ImportadorPlanilha({ clientes }: Props) {
   // ETAPA: PREVIEW
   // ==================================================================
   if (etapa === "preview" && preview) {
-    const totalPagos = preview.cessionarios.reduce(
+    const selecionadosList = preview.cessionarios.filter((_, i) =>
+      selecionados.has(i),
+    );
+    const totalPagosSel = selecionadosList.reduce(
       (s, c) => s + c.pagamentos.length,
       0,
     );
-    const somaValores = preview.cessionarios.reduce(
+    const somaValoresSel = selecionadosList.reduce(
       (s, c) => s + c.totalRecebido,
+      0,
+    );
+    const somaInicialSel = selecionadosList.reduce(
+      (s, c) => s + c.saldoInicial,
       0,
     );
     return (
       <div className="space-y-4">
         <Alert variant="info">
-          Cliente: <strong>{clienteSelecionado?.nome}</strong> · Arquivos
-          válidos: <strong>{preview.cessionarios.length}</strong> ·{" "}
-          Pagamentos: <strong>{totalPagos}</strong> · Total recebido:{" "}
-          <strong>{formatBRL(somaValores)}</strong>
+          Cliente: <strong>{clienteSelecionado?.nome}</strong> ·{" "}
+          Selecionados:{" "}
+          <strong>
+            {selecionadosList.length} de {preview.cessionarios.length}
+          </strong>{" "}
+          · Pagamentos: <strong>{totalPagosSel}</strong> · Volume total:{" "}
+          <strong>{formatBRL(somaInicialSel)}</strong> · Recebido:{" "}
+          <strong>{formatBRL(somaValoresSel)}</strong>
         </Alert>
+
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-[var(--border)] bg-black/20 p-3">
+          <span className="text-xs text-[var(--muted)]">Selecionar:</span>
+          <button
+            type="button"
+            onClick={selecionarTodos}
+            className="rounded-md border border-[var(--border)] bg-black/20 px-3 py-1 text-xs text-foreground transition-colors hover:border-[var(--gold)]/50"
+          >
+            Todos ({preview.cessionarios.length})
+          </button>
+          <button
+            type="button"
+            onClick={selecionarAtivos}
+            title="Só cessionários com último pagamento em 2025 ou 2026"
+            className="rounded-md border border-[var(--gold)]/40 bg-[var(--gold)]/10 px-3 py-1 text-xs text-[var(--gold)] transition-colors hover:border-[var(--gold)] hover:bg-[var(--gold)]/20"
+          >
+            Apenas ativos 2025/2026
+          </button>
+          <button
+            type="button"
+            onClick={desmarcarTodos}
+            className="rounded-md border border-[var(--border)] bg-black/20 px-3 py-1 text-xs text-[var(--muted)] transition-colors hover:text-foreground"
+          >
+            Desmarcar todos
+          </button>
+        </div>
 
         {preview.erros.length > 0 && (
           <details className="rounded-lg border border-[var(--warning)]/40 bg-[var(--warning)]/5 p-3">
@@ -229,6 +304,7 @@ export function ImportadorPlanilha({ clientes }: Props) {
           <table className="w-full text-sm">
             <thead className="bg-black/30 text-left text-xs uppercase tracking-wide text-[var(--muted)]">
               <tr>
+                <th className="w-12 px-4 py-3 font-medium"></th>
                 <th className="px-4 py-3 font-medium">Cessionário</th>
                 <th className="px-4 py-3 font-medium">% cedida</th>
                 <th className="px-4 py-3 text-right font-medium">
@@ -243,11 +319,25 @@ export function ImportadorPlanilha({ clientes }: Props) {
               {preview.cessionarios.map((c, i) => {
                 const primeira = c.pagamentos[0]?.data;
                 const ultima = c.pagamentos[c.pagamentos.length - 1]?.data;
+                const marcado = selecionados.has(i);
                 return (
                   <tr
                     key={i}
-                    className={`border-t border-[var(--border)] ${i % 2 === 1 ? "bg-black/[0.08]" : ""}`}
+                    className={`border-t border-[var(--border)] transition-colors ${
+                      marcado
+                        ? ""
+                        : "opacity-40"
+                    } ${i % 2 === 1 ? "bg-black/[0.08]" : ""}`}
                   >
+                    <td className="w-12 px-4 py-3">
+                      <input
+                        type="checkbox"
+                        checked={marcado}
+                        onChange={() => toggleSelecionado(i)}
+                        aria-label={`Selecionar ${c.nome}`}
+                        className="h-4 w-4 cursor-pointer rounded border-[var(--border)] bg-black/30 accent-[var(--gold)]"
+                      />
+                    </td>
                     <td className="px-4 py-3 font-medium">
                       {c.nome}
                       {c.avisos.length > 0 && (
@@ -285,12 +375,12 @@ export function ImportadorPlanilha({ clientes }: Props) {
           <button
             type="button"
             onClick={handleImportar}
-            disabled={pending || preview.cessionarios.length === 0}
+            disabled={pending || selecionados.size === 0}
             className="inline-flex items-center gap-2 rounded-lg bg-[var(--gold)] px-5 py-2.5 text-sm font-semibold text-[var(--background)] transition-colors hover:bg-[var(--gold-hover)] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {pending
               ? "Importando..."
-              : `Confirmar e importar (${preview.cessionarios.length})`}
+              : `Confirmar e importar (${selecionados.size})`}
           </button>
           <button
             type="button"

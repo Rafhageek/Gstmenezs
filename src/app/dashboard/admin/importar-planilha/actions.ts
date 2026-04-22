@@ -152,10 +152,20 @@ async function importarUmCessionario(
   }
 
   // 2) Cria cessão (trigger vai gerar parcelas em branco — vamos deletar depois)
+  // Valor total = máximo entre saldo inicial e soma dos pagamentos.
+  // Isso cobre casos de overpay (ex: ARTPLAY recebeu mais que o valor contratado).
   const valorTotal = Math.max(cessionario.saldoInicial, somaPagos, 0.01);
   const primeiraData = cessionario.pagamentos[0]?.data ?? new Date().toISOString().slice(0, 10);
   const ultimaData =
     cessionario.pagamentos[cessionario.pagamentos.length - 1]?.data ?? primeiraData;
+
+  // Status automático:
+  // - quitada: soma dos pagamentos >= saldo inicial (já liquidou)
+  // - ativa:   ainda tem saldo a receber
+  const statusAuto: "ativa" | "quitada" =
+    somaPagos >= cessionario.saldoInicial && cessionario.saldoInicial > 0
+      ? "quitada"
+      : "ativa";
 
   const { data: cessao, error: errCessao } = await supabase
     .from("cessoes_credito")
@@ -167,7 +177,7 @@ async function importarUmCessionario(
       parcelas_total: cessionario.pagamentos.length || 1,
       data_cessao: primeiraData,
       data_vencimento_inicial: primeiraData,
-      status: "ativa",
+      status: statusAuto,
       percentual_cedido: cessionario.percentualCedido,
       observacoes: `[IMPORT] Origem: ${cessionario.arquivo}. Saldo inicial original: R$ ${cessionario.saldoInicial.toFixed(2)}. Último pagamento: ${ultimaData}.`,
       created_by: userId,

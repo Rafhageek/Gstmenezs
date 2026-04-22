@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/input";
 import { Alert } from "@/components/ui/feedback";
 import { ComprovanteInput } from "@/components/comprovante-input";
+import { ConfirmExclusaoModal } from "@/components/confirm-exclusao-modal";
 import {
   registrarPagamento,
   estornarPagamento,
@@ -142,18 +143,38 @@ export function EstornarButton({ pagamentoId }: { pagamentoId: string }) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const [modalOpen, setModalOpen] = useState(false);
+  const [formDataPendente, setFormDataPendente] = useState<FormData | null>(
+    null,
+  );
 
   function onSubmit(formData: FormData) {
     setError(null);
-    startTransition(async () => {
-      const res = await estornarPagamento(formData);
-      if (res.error) {
-        setError(res.error);
-        toast.error("Erro ao estornar", { description: res.error });
-      } else {
-        setOpen(false);
-        toast.success("Pagamento estornado");
+    // Guarda o formData e abre modal de senha
+    setFormDataPendente(formData);
+    setModalOpen(true);
+  }
+
+  function executarEstorno(): Promise<void> {
+    return new Promise((resolve) => {
+      if (!formDataPendente) {
+        resolve();
+        return;
       }
+      startTransition(async () => {
+        const res = await estornarPagamento(formDataPendente);
+        if (res.error) {
+          setError(res.error);
+          toast.error("Erro ao estornar", { description: res.error });
+          setModalOpen(false);
+        } else {
+          setOpen(false);
+          setModalOpen(false);
+          setFormDataPendente(null);
+          toast.success("Pagamento estornado");
+        }
+        resolve();
+      });
     });
   }
 
@@ -203,6 +224,19 @@ export function EstornarButton({ pagamentoId }: { pagamentoId: string }) {
           Cancelar
         </Button>
       </div>
+
+      {modalOpen && (
+        <ConfirmExclusaoModal
+          titulo="Estornar pagamento"
+          descricao="Um lançamento contrário será criado (o original fica preservado pra auditoria)."
+          labelConfirmar="Confirmar estorno"
+          onConfirmar={executarEstorno}
+          onCancelar={() => {
+            setModalOpen(false);
+            setFormDataPendente(null);
+          }}
+        />
+      )}
     </form>
   );
 }
@@ -409,6 +443,7 @@ export function AnexarComprovanteButton({
   const [arquivoSelecionado, setArquivoSelecionado] = useState<File | null>(
     null,
   );
+  const [modalRemover, setModalRemover] = useState(false);
 
   function onSubmit(formData: FormData) {
     setError(null);
@@ -434,17 +469,18 @@ export function AnexarComprovanteButton({
     });
   }
 
-  function handleRemover() {
-    if (!confirm("Remover este comprovante? Essa ação não pode ser desfeita.")) {
-      return;
-    }
-    startTransition(async () => {
-      const res = await removerComprovante(pagamentoId);
-      if (res.error) {
-        toast.error("Erro ao remover", { description: res.error });
-      } else {
-        toast.success("Comprovante removido");
-      }
+  function executarRemover(): Promise<void> {
+    return new Promise((resolve) => {
+      startTransition(async () => {
+        const res = await removerComprovante(pagamentoId);
+        if (res.error) {
+          toast.error("Erro ao remover", { description: res.error });
+        } else {
+          toast.success("Comprovante removido");
+          setModalRemover(false);
+        }
+        resolve();
+      });
     });
   }
 
@@ -506,7 +542,7 @@ export function AnexarComprovanteButton({
             type="button"
             variant="danger"
             size="sm"
-            onClick={handleRemover}
+            onClick={() => setModalRemover(true)}
             disabled={pending}
             className="ml-auto"
           >
@@ -514,6 +550,16 @@ export function AnexarComprovanteButton({
           </Button>
         )}
       </div>
+
+      {modalRemover && (
+        <ConfirmExclusaoModal
+          titulo="Remover comprovante"
+          descricao="O arquivo do comprovante será apagado permanentemente. O registro do pagamento continua normal."
+          labelConfirmar="Remover comprovante"
+          onConfirmar={executarRemover}
+          onCancelar={() => setModalRemover(false)}
+        />
+      )}
     </form>
   );
 }

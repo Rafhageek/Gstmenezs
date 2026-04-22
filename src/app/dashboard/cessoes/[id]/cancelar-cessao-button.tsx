@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Field, Textarea } from "@/components/ui/input";
 import { Alert } from "@/components/ui/feedback";
+import { ConfirmExclusaoModal } from "@/components/confirm-exclusao-modal";
 import { cancelarCessao } from "../actions";
 
 export function CancelarCessaoButton({
@@ -16,22 +17,32 @@ export function CancelarCessaoButton({
   numeroContrato: string;
 }) {
   const [open, setOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
   const [confirmText, setConfirmText] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const router = useRouter();
 
   function onConfirm() {
+    // Após validar texto do contrato, abre modal de senha
     setError(null);
-    startTransition(async () => {
-      const res = await cancelarCessao(cessaoId);
-      if (res.error) {
-        setError(res.error);
-        toast.error("Erro ao cancelar", { description: res.error });
-      } else {
-        toast.success(`Cessão ${numeroContrato} cancelada`);
-        router.push("/dashboard/cessoes");
-      }
+    setModalOpen(true);
+  }
+
+  function executarCancelamento(): Promise<void> {
+    return new Promise((resolve) => {
+      startTransition(async () => {
+        const res = await cancelarCessao(cessaoId);
+        if (res.error) {
+          setError(res.error);
+          toast.error("Erro ao cancelar", { description: res.error });
+          setModalOpen(false);
+        } else {
+          toast.success(`Cessão ${numeroContrato} cancelada`);
+          router.push("/dashboard/cessoes");
+        }
+        resolve();
+      });
     });
   }
 
@@ -89,6 +100,22 @@ export function CancelarCessaoButton({
           Voltar
         </Button>
       </div>
+
+      {modalOpen && (
+        <ConfirmExclusaoModal
+          titulo="Cancelar cessão"
+          descricao={
+            <>
+              A cessão <strong className="text-foreground">{numeroContrato}</strong>{" "}
+              será marcada como cancelada. Parcelas e pagamentos ficam preservados
+              pra auditoria.
+            </>
+          }
+          labelConfirmar="Cancelar cessão"
+          onConfirmar={executarCancelamento}
+          onCancelar={() => setModalOpen(false)}
+        />
+      )}
     </div>
   );
 }

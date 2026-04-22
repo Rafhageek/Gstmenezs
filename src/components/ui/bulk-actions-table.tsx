@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { EmptyState } from "./empty-state";
+import { ConfirmExclusaoModal } from "../confirm-exclusao-modal";
 
 export interface BulkResultShape {
   ok: number;
@@ -55,6 +56,7 @@ export function BulkActionsTable({
   const router = useRouter();
   const [selecionados, setSelecionados] = useState<Set<string>>(new Set());
   const [pending, startTransition] = useTransition();
+  const [modalAction, setModalAction] = useState<BulkAction | null>(null);
 
   const todosSelecionados = useMemo(
     () => items.length > 0 && selecionados.size === items.length,
@@ -80,43 +82,60 @@ export function BulkActionsTable({
     });
   }
 
+  async function rodarAcao(action: BulkAction): Promise<void> {
+    const ids = [...selecionados];
+    if (ids.length === 0) return;
+    return new Promise((resolve) => {
+      startTransition(async () => {
+        const res = await action.onExecute(ids);
+        if (res.ok > 0) {
+          const msg = action.successMessage
+            ? action.successMessage(res.ok)
+            : `${res.ok} item${res.ok === 1 ? "" : "s"} processado${res.ok === 1 ? "" : "s"}`;
+          toast.success(msg);
+        }
+        if (res.falhas.length > 0) {
+          const primeiros = res.falhas.slice(0, 3).map((f) => {
+            const nome = f.nome ? `"${f.nome}"` : f.id.slice(0, 8);
+            return `• ${nome}: ${f.motivo}`;
+          });
+          const restante =
+            res.falhas.length > 3
+              ? `\n…e mais ${res.falhas.length - 3}`
+              : "";
+          toast.error(
+            `${res.falhas.length} ${res.falhas.length === 1 ? "falhou" : "falharam"}`,
+            {
+              description: primeiros.join("\n") + restante,
+              duration: 10000,
+            },
+          );
+        }
+        setSelecionados(new Set());
+        setModalAction(null);
+        router.refresh();
+        resolve();
+      });
+    });
+  }
+
   function executar(action: BulkAction) {
     const ids = [...selecionados];
     if (ids.length === 0) return;
 
+    // Ações destrutivas (danger) exigem senha via modal
+    if (action.tone === "danger") {
+      setModalAction(action);
+      return;
+    }
+
+    // Ações não-destrutivas usam confirm nativo se `confirm` estiver presente
     if (action.confirm) {
       const ok = confirm(action.confirm(ids.length));
       if (!ok) return;
     }
 
-    startTransition(async () => {
-      const res = await action.onExecute(ids);
-      if (res.ok > 0) {
-        const msg = action.successMessage
-          ? action.successMessage(res.ok)
-          : `${res.ok} item${res.ok === 1 ? "" : "s"} processado${res.ok === 1 ? "" : "s"}`;
-        toast.success(msg);
-      }
-      if (res.falhas.length > 0) {
-        const primeiros = res.falhas.slice(0, 3).map((f) => {
-          const nome = f.nome ? `"${f.nome}"` : f.id.slice(0, 8);
-          return `• ${nome}: ${f.motivo}`;
-        });
-        const restante =
-          res.falhas.length > 3
-            ? `\n…e mais ${res.falhas.length - 3}`
-            : "";
-        toast.error(
-          `${res.falhas.length} ${res.falhas.length === 1 ? "falhou" : "falharam"}`,
-          {
-            description: primeiros.join("\n") + restante,
-            duration: 10000,
-          },
-        );
-      }
-      setSelecionados(new Set());
-      router.refresh();
-    });
+    rodarAcao(action);
   }
 
   function handleRowClick(
@@ -244,6 +263,20 @@ export function BulkActionsTable({
           </tbody>
         </table>
       </div>
+
+      {modalAction && (
+        <ConfirmExclusaoModal
+          titulo={modalAction.label}
+          descricao={
+            modalAction.confirm
+              ? modalAction.confirm(selecionados.size)
+              : `Confirmar "${modalAction.label}" em ${selecionados.size} item(ns)?`
+          }
+          labelConfirmar={modalAction.label}
+          onConfirmar={() => rodarAcao(modalAction)}
+          onCancelar={() => setModalAction(null)}
+        />
+      )}
     </>
   );
 }

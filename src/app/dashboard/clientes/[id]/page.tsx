@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { PageHeader } from "@/components/ui/page-header";
 import { DataTable } from "@/components/ui/data-table";
 import { Pagination } from "@/components/ui/pagination";
 import { Badge } from "@/components/ui/feedback";
@@ -95,11 +94,30 @@ export default async function ClienteDetalhesPage({
 
   return (
     <div>
-      <PageHeader
-        eyebrow="Cliente principal"
-        titulo={cliente.nome}
-        descricao={formatDocumento(cliente.documento)}
-      />
+      <header className="mb-8 flex flex-wrap items-start justify-between gap-6">
+        <div>
+          <p className="text-xs uppercase tracking-[0.2em] text-[var(--gold)]">
+            Cliente principal
+          </p>
+          <h1 className="mt-1 text-3xl font-semibold tracking-tight">
+            {cliente.nome}
+          </h1>
+          <p className="mt-2 text-sm text-[var(--muted)]">
+            {formatDocumento(cliente.documento)}
+          </p>
+        </div>
+        <div className="grid w-full gap-3 sm:max-w-xl sm:grid-cols-2">
+          <InfoCard titulo="Contato">
+            <Info label="E-mail" value={cliente.email ?? ""} />
+            <Info label="Telefone" value={formatTelefone(cliente.telefone)} />
+          </InfoCard>
+          <InfoCard titulo="Endereço">
+            <p className="text-sm">
+              {cliente.endereco ? formatarEndereco(cliente.endereco) : "—"}
+            </p>
+          </InfoCard>
+        </div>
+      </header>
 
       {parcelasAtrasadas != null && parcelasAtrasadas > 0 && (
         <div
@@ -186,18 +204,6 @@ export default async function ClienteDetalhesPage({
           />
         </section>
       )}
-
-      <section className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2">
-        <InfoCard titulo="Contato">
-          <Info label="E-mail" value={cliente.email ?? ""} />
-          <Info label="Telefone" value={formatTelefone(cliente.telefone)} />
-        </InfoCard>
-        <InfoCard titulo="Endereço">
-          <p className="text-sm">
-            {cliente.endereco ? formatarEndereco(cliente.endereco) : "—"}
-          </p>
-        </InfoCard>
-      </section>
 
       {cliente.observacoes && (
         <section className="mb-8 rounded-xl border border-[var(--border)] bg-[var(--background-elevated)] p-5">

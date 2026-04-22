@@ -10,10 +10,12 @@ import {
   EstornarButton,
   VerComprovanteLink,
   EditarParcelaButton,
+  AnexarComprovanteButton,
 } from "./parcela-actions";
 import { CancelarCessaoButton } from "./cancelar-cessao-button";
 import { CessaoTimeline } from "./cessao-timeline";
 import { CelebracaoQuitacao } from "./celebracao-quitacao";
+import { GaleriaComprovantes } from "./galeria-comprovantes";
 import { WhatsAppShareButton } from "@/components/whatsapp-share-button";
 import { digits } from "@/lib/format";
 import type {
@@ -214,9 +216,15 @@ export default async function CessaoDetalhesPage({ params }: Props) {
                   </td>
                   <td className="px-4 py-3 text-[var(--muted)]">
                     {formatDataBR(p.data_pagamento)}
-                    {p.comprovante_url && (
-                      <div className="mt-1">
-                        <VerComprovanteLink path={p.comprovante_url} />
+                    {p.data_pagamento && !p.is_reversal && (
+                      <div className="mt-1 flex flex-col gap-1">
+                        {p.comprovante_url && (
+                          <VerComprovanteLink path={p.comprovante_url} />
+                        )}
+                        <AnexarComprovanteButton
+                          pagamentoId={p.id}
+                          jaTemComprovante={!!p.comprovante_url}
+                        />
                       </div>
                     )}
                   </td>
@@ -232,6 +240,30 @@ export default async function CessaoDetalhesPage({ params }: Props) {
           </table>
         </div>
         )}
+      </section>
+
+      <section className="mt-10">
+        <h2 className="mb-4 flex items-center gap-3 text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">
+          Comprovantes
+          <span className="rounded-full bg-[var(--gold)]/15 px-2 py-0.5 font-mono text-[10px] text-[var(--gold)]">
+            {
+              parcelas.filter(
+                (p) => !!p.comprovante_url && !p.is_reversal,
+              ).length
+            }
+          </span>
+        </h2>
+        <GaleriaComprovantes
+          itens={parcelas
+            .filter((p) => !!p.comprovante_url && !p.is_reversal)
+            .map((p) => ({
+              pagamentoId: p.id,
+              numeroParcela: p.numero_parcela,
+              valor: Number(p.valor),
+              dataPagamento: p.data_pagamento,
+              path: p.comprovante_url as string,
+            }))}
+        />
       </section>
 
       {timeline && timeline.length > 0 && (

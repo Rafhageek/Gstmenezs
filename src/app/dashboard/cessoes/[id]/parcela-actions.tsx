@@ -5,11 +5,14 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/input";
 import { Alert } from "@/components/ui/feedback";
+import { ComprovanteInput } from "@/components/comprovante-input";
 import {
   registrarPagamento,
   estornarPagamento,
   getComprovanteUrl,
   atualizarParcela,
+  anexarComprovantePosterior,
+  removerComprovante,
 } from "@/app/dashboard/pagamentos/actions";
 import { hojeISO, formatBRL } from "@/lib/format";
 
@@ -108,13 +111,11 @@ export function PagarParcelaButton({
         <Textarea name="observacoes" rows={2} placeholder="Notas opcionais" />
       </Field>
 
-      <Field label="Comprovante (PDF/imagem)">
-        <input
-          name="comprovante"
-          type="file"
-          accept="application/pdf,image/*"
-          className="block w-full text-xs file:mr-3 file:rounded file:border-0 file:bg-[var(--gold)]/20 file:px-3 file:py-1.5 file:text-[var(--gold)] hover:file:bg-[var(--gold)]/30"
-        />
+      <Field
+        label="Comprovante (PDF/imagem — máx. 5 MB)"
+        hint="Imagens grandes são comprimidas automaticamente"
+      >
+        <ComprovanteInput onChange={() => {}} />
       </Field>
 
       {error && <Alert variant="danger">{error}</Alert>}
@@ -331,5 +332,126 @@ export function VerComprovanteLink({ path }: { path: string }) {
     >
       {loading ? "..." : "📎 Ver comprovante"}
     </button>
+  );
+}
+
+/**
+ * Botão pra anexar ou substituir o comprovante de um pagamento já registrado.
+ * Mostra "Anexar" quando não tem comprovante ainda, "Substituir" quando já tem.
+ */
+export function AnexarComprovanteButton({
+  pagamentoId,
+  jaTemComprovante,
+}: {
+  pagamentoId: string;
+  jaTemComprovante: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+  const [arquivoSelecionado, setArquivoSelecionado] = useState<File | null>(
+    null,
+  );
+
+  function onSubmit(formData: FormData) {
+    setError(null);
+    if (!arquivoSelecionado) {
+      setError("Selecione um arquivo.");
+      return;
+    }
+    formData.set("pagamento_id", pagamentoId);
+    startTransition(async () => {
+      const res = await anexarComprovantePosterior(formData);
+      if (res.error) {
+        setError(res.error);
+        toast.error("Erro ao anexar", { description: res.error });
+      } else {
+        setOpen(false);
+        setArquivoSelecionado(null);
+        toast.success(
+          jaTemComprovante
+            ? "Comprovante substituído"
+            : "Comprovante anexado",
+        );
+      }
+    });
+  }
+
+  function handleRemover() {
+    if (!confirm("Remover este comprovante? Essa ação não pode ser desfeita.")) {
+      return;
+    }
+    startTransition(async () => {
+      const res = await removerComprovante(pagamentoId);
+      if (res.error) {
+        toast.error("Erro ao remover", { description: res.error });
+      } else {
+        toast.success("Comprovante removido");
+      }
+    });
+  }
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="text-xs text-[var(--muted)] transition-colors hover:text-[var(--gold)] hover:underline"
+        title={
+          jaTemComprovante
+            ? "Substituir comprovante atual"
+            : "Anexar comprovante"
+        }
+      >
+        {jaTemComprovante ? "🔄 Substituir" : "📎 Anexar comprovante"}
+      </button>
+    );
+  }
+
+  return (
+    <form
+      action={onSubmit}
+      className="mt-2 space-y-3 rounded-lg border border-[var(--border)] bg-[var(--background-elevated)] p-3"
+    >
+      <p className="text-[10px] uppercase tracking-wide text-[var(--gold)]">
+        {jaTemComprovante ? "Substituir comprovante" : "Anexar comprovante"}
+      </p>
+      <ComprovanteInput onChange={setArquivoSelecionado} />
+      {error && <Alert variant="danger">{error}</Alert>}
+      <div className="flex items-center gap-2">
+        <Button
+          type="submit"
+          size="sm"
+          disabled={pending || !arquivoSelecionado}
+        >
+          {pending ? "Enviando..." : "Salvar"}
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            setOpen(false);
+            setArquivoSelecionado(null);
+            setError(null);
+          }}
+          disabled={pending}
+        >
+          Cancelar
+        </Button>
+        {jaTemComprovante && (
+          <Button
+            type="button"
+            variant="danger"
+            size="sm"
+            onClick={handleRemover}
+            disabled={pending}
+            className="ml-auto"
+          >
+            Remover
+          </Button>
+        )}
+      </div>
+    </form>
   );
 }

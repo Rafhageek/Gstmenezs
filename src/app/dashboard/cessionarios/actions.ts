@@ -99,6 +99,32 @@ export async function atualizarCessionario(
   redirect("/dashboard/cessionarios");
 }
 
+export async function excluirCessionario(id: string) {
+  const supabase = await createClient();
+
+  // Bloqueia se tiver cessões vinculadas
+  const { count: cessoesCount } = await supabase
+    .from("cessoes_credito")
+    .select("id", { count: "exact", head: true })
+    .eq("cessionario_id", id);
+
+  if (cessoesCount && cessoesCount > 0) {
+    return {
+      error: `Não é possível excluir: este cessionário tem ${cessoesCount} cessão${cessoesCount === 1 ? "" : "ões"} vinculada${cessoesCount === 1 ? "" : "s"}. Exclua as cessões primeiro ou arquive o cadastro (Editar > desmarcar "Ativo").`,
+    };
+  }
+
+  const { error } = await supabase
+    .from("cessionarios")
+    .delete()
+    .eq("id", id);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/dashboard/cessionarios");
+  return { error: null };
+}
+
 function toFieldErrors(
   err: import("zod").ZodError,
 ): CessionarioFormState {

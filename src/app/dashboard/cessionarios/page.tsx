@@ -8,6 +8,7 @@ import { SortableHeader } from "@/components/ui/sortable-header";
 import { MonthYearFilter } from "@/components/ui/month-year-filter";
 import { Pagination } from "@/components/ui/pagination";
 import { formatBRL, formatDataBR, formatDocumento, formatTelefone, digits } from "@/lib/format";
+import { DeleteCessionarioButton } from "./delete-cessionario-button";
 import type { Cessionario } from "@/types/database";
 
 export const metadata = {
@@ -224,6 +225,7 @@ export default async function CessionariosPage({
             >
               Editar
             </Link>
+            <DeleteCessionarioButton id={c.id} nome={c.nome} />
           </div>,
         ])}
       />

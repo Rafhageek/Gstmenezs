@@ -93,6 +93,19 @@ export async function atualizarCliente(
 
 export async function excluirCliente(id: string) {
   const supabase = await createClient();
+
+  // Bloqueia se tiver cessões vinculadas (preserva integridade contábil)
+  const { count: cessoesCount } = await supabase
+    .from("cessoes_credito")
+    .select("id", { count: "exact", head: true })
+    .eq("cliente_principal_id", id);
+
+  if (cessoesCount && cessoesCount > 0) {
+    return {
+      error: `Não é possível excluir: este cliente tem ${cessoesCount} cessão${cessoesCount === 1 ? "" : "ões"} vinculada${cessoesCount === 1 ? "" : "s"}. Exclua as cessões primeiro ou arquive o cadastro (Editar > desmarcar "Ativo").`,
+    };
+  }
+
   const { error } = await supabase
     .from("clientes_principais")
     .delete()

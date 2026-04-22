@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/feedback";
 import { SearchInput } from "@/components/ui/search-input";
 import { SortableHeader } from "@/components/ui/sortable-header";
 import { Pagination } from "@/components/ui/pagination";
+import { DeleteClienteButton } from "./delete-cliente-button";
 import { formatDocumento, formatTelefone, digits } from "@/lib/format";
 import type { ClientePrincipal, InadimplenciaItem } from "@/types/database";
 
@@ -189,6 +190,7 @@ export default async function ClientesPage({
             >
               Editar
             </Link>
+            <DeleteClienteButton id={c.id} nome={c.nome} />
           </div>,
         ];
         })}

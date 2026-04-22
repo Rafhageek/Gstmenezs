@@ -226,24 +226,26 @@ export async function importarPlanilhaHistorico(
     };
   }
 
-  // Gera prefixo para numero_contrato
+  // Gera prefixo para numero_contrato e documento placeholder.
+  // O placeholder usa o MESMO ts + idx que o numero_contrato pra garantir
+  // unicidade mesmo quando uma importação anterior falhou parcialmente
+  // (placeholderSeq sequencial colidia em cascata depois de qualquer erro).
   const ts = new Date()
     .toISOString()
     .slice(0, 16)
     .replace(/[-T:]/g, "");
-  let placeholderSeq = 1;
 
   for (let idx = 0; idx < cessionarios.length; idx++) {
     const c = cessionarios[idx];
+    const sufixo = String(idx + 1).padStart(3, "0");
     try {
       const r = await importarUmCessionario(supabase, {
         cliente,
         cessionario: c,
         userId: user.id,
-        numeroContrato: `IMP-${ts}-${String(idx + 1).padStart(3, "0")}`,
-        documentoPlaceholder: `PENDENTE-${String(placeholderSeq).padStart(3, "0")}`,
+        numeroContrato: `IMP-${ts}-${sufixo}`,
+        documentoPlaceholder: `PENDENTE-${ts}-${sufixo}`,
       });
-      placeholderSeq++;
       result.cessionariosCriados += 1;
       if (r.cessaoCriada) result.cessoesCriadas += 1;
       result.pagamentosCriados += c.pagamentos.length;

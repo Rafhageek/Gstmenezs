@@ -99,6 +99,18 @@ function parseData(raw: string): string | null {
     mm = n2;
   }
   if (mm < 1 || mm > 12 || dd < 1 || dd > 31) return null;
+  // Valida que a data é real no calendário (descarta 30/02, 31/04, etc.).
+  // O contador às vezes digita data inválida na planilha (ex: JUMP 2026-02-30)
+  // e o Postgres rejeita o INSERT inteiro de pagamentos da cessão.
+  const yyyyN = Number(yyyy);
+  const d = new Date(yyyyN, mm - 1, dd);
+  if (
+    d.getFullYear() !== yyyyN ||
+    d.getMonth() + 1 !== mm ||
+    d.getDate() !== dd
+  ) {
+    return null;
+  }
   return `${yyyy}-${String(mm).padStart(2, "0")}-${String(dd).padStart(2, "0")}`;
 }
 

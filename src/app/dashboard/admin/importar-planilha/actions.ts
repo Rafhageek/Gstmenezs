@@ -3,63 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import {
-  parsePlanilhaHistorico,
-  type CessionarioHistorico,
-} from "@/lib/planilha-historico-parser";
-
-export interface PreviewResult {
-  total: number;
-  cessionarios: (CessionarioHistorico & { avisos: string[] })[];
-  erros: { arquivo: string; mensagem: string }[];
-}
-
-/**
- * Parseia múltiplos HTMLs e retorna preview. Não toca no banco.
- */
-export async function previewPlanilhaHistorico(
-  formData: FormData,
-): Promise<PreviewResult> {
-  const arquivos = formData.getAll("arquivos") as File[];
-  const previews: (CessionarioHistorico & { avisos: string[] })[] = [];
-  const erros: { arquivo: string; mensagem: string }[] = [];
-
-  for (const file of arquivos) {
-    if (!file || !file.name) continue;
-    try {
-      const html = await file.text();
-      const { cessionario, avisos } = parsePlanilhaHistorico(html, file.name);
-      if (!cessionario) {
-        erros.push({
-          arquivo: file.name,
-          mensagem: avisos[0] ?? "Falha ao parsear.",
-        });
-        continue;
-      }
-      // Pula arquivos que claramente não são cessionários (Resumo, MOV)
-      if (
-        /resumo/i.test(file.name) ||
-        /mov\s+mes/i.test(file.name) ||
-        cessionario.pagamentos.length === 0
-      ) {
-        erros.push({
-          arquivo: file.name,
-          mensagem:
-            cessionario.pagamentos.length === 0
-              ? "Sem pagamentos (pulado)"
-              : "Arquivo de resumo (pulado)",
-        });
-        continue;
-      }
-      previews.push({ ...cessionario, avisos });
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      erros.push({ arquivo: file.name, mensagem: msg });
-    }
-  }
-
-  return { total: previews.length, cessionarios: previews, erros };
-}
+import type { CessionarioHistorico } from "@/lib/planilha-historico-parser";
 
 export interface ImportResult {
   cessionariosCriados: number;

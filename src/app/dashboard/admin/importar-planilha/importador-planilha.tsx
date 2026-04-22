@@ -5,10 +5,16 @@ import { toast } from "sonner";
 import { Alert } from "@/components/ui/feedback";
 import { formatBRL, formatDataBR } from "@/lib/format";
 import {
-  previewPlanilhaHistorico,
-  importarPlanilhaHistorico,
-  type PreviewResult,
-} from "./actions";
+  parsePlanilhaHistorico,
+  type CessionarioHistorico,
+} from "@/lib/planilha-historico-parser";
+import { importarPlanilhaHistorico } from "./actions";
+
+interface PreviewResult {
+  total: number;
+  cessionarios: (CessionarioHistorico & { avisos: string[] })[];
+  erros: { arquivo: string; mensagem: string }[];
+}
 
 interface Props {
   clientes: { id: string; nome: string; documento: string }[];
@@ -23,6 +29,11 @@ export function ImportadorPlanilha({ clientes }: Props) {
   const [preview, setPreview] = useState<PreviewResult | null>(null);
   const [resumoFinal, setResumoFinal] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const [parseando, setParseando] = useState(false);
+  const [progresso, setProgresso] = useState<{ atual: number; total: number }>({
+    atual: 0,
+    total: 0,
+  });
 
   const clienteSelecionado = clientes.find((c) => c.id === clienteId);
 
@@ -35,17 +46,66 @@ export function ImportadorPlanilha({ clientes }: Props) {
       toast.error("Selecione pelo menos 1 arquivo HTML.");
       return;
     }
-    const fd = new FormData();
-    for (const f of arquivos) fd.append("arquivos", f);
 
-    startTransition(async () => {
-      const res = await previewPlanilhaHistorico(fd);
+    // Parser roda NO NAVEGADOR — evita upload de MBs pro servidor
+    setParseando(true);
+    setProgresso({ atual: 0, total: arquivos.length });
+    try {
+      const previews: (CessionarioHistorico & { avisos: string[] })[] = [];
+      const erros: { arquivo: string; mensagem: string }[] = [];
+
+      for (let i = 0; i < arquivos.length; i++) {
+        const file = arquivos[i];
+        setProgresso({ atual: i + 1, total: arquivos.length });
+        try {
+          const html = await file.text();
+          const { cessionario, avisos } = parsePlanilhaHistorico(
+            html,
+            file.name,
+          );
+          if (!cessionario) {
+            erros.push({
+              arquivo: file.name,
+              mensagem: avisos[0] ?? "Falha ao parsear.",
+            });
+            continue;
+          }
+          if (
+            /resumo/i.test(file.name) ||
+            /mov\s+mes/i.test(file.name) ||
+            cessionario.pagamentos.length === 0
+          ) {
+            erros.push({
+              arquivo: file.name,
+              mensagem:
+                cessionario.pagamentos.length === 0
+                  ? "Sem pagamentos (pulado)"
+                  : "Arquivo de resumo (pulado)",
+            });
+            continue;
+          }
+          previews.push({ ...cessionario, avisos });
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          erros.push({ arquivo: file.name, mensagem: msg });
+        }
+        // Yield para a UI atualizar o progresso
+        await new Promise((r) => setTimeout(r, 0));
+      }
+
+      const res: PreviewResult = {
+        total: previews.length,
+        cessionarios: previews,
+        erros,
+      };
       setPreview(res);
       setEtapa("preview");
       if (res.cessionarios.length === 0) {
         toast.error("Nenhum cessionário válido encontrado nos arquivos.");
       }
-    });
+    } finally {
+      setParseando(false);
+    }
   }
 
   function handleImportar() {
@@ -297,11 +357,11 @@ export function ImportadorPlanilha({ clientes }: Props) {
         <button
           type="button"
           onClick={handlePreview}
-          disabled={pending || !clienteId || arquivos.length === 0}
+          disabled={parseando || pending || !clienteId || arquivos.length === 0}
           className="inline-flex items-center gap-2 rounded-lg bg-[var(--gold)] px-5 py-2.5 text-sm font-semibold text-[var(--background)] transition-colors hover:bg-[var(--gold-hover)] disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {pending
-            ? "Processando..."
+          {parseando
+            ? `Analisando ${progresso.atual} de ${progresso.total}...`
             : `Gerar preview (${arquivos.length || 0} arquivo${arquivos.length === 1 ? "" : "s"})`}
         </button>
       </div>

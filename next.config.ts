@@ -15,6 +15,13 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  experimental: {
+    serverActions: {
+      // Importador de planilha histórica envia JSON com muitos pagamentos.
+      // Default = 1MB. 5MB é folgado pra nosso caso (<200KB esperado).
+      bodySizeLimit: "5mb",
+    },
+  },
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },

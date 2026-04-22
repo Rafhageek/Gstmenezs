@@ -125,6 +125,93 @@ export async function excluirCessionario(id: string) {
   return { error: null };
 }
 
+export interface BulkResult {
+  ok: number;
+  falhas: { id: string; nome?: string; motivo: string }[];
+}
+
+export async function excluirCessionariosEmMassa(
+  ids: string[],
+): Promise<BulkResult> {
+  const result: BulkResult = { ok: 0, falhas: [] };
+  if (ids.length === 0) return result;
+
+  const supabase = await createClient();
+
+  const { data: nomesRes } = await supabase
+    .from("cessionarios")
+    .select("id, nome")
+    .in("id", ids);
+  const nomeMap = new Map(
+    (nomesRes ?? []).map((c) => [c.id as string, c.nome as string]),
+  );
+
+  const { data: comCessoes } = await supabase
+    .from("cessoes_credito")
+    .select("cessionario_id")
+    .in("cessionario_id", ids);
+  const idsComCessoes = new Set(
+    (comCessoes ?? []).map(
+      (c) => (c as { cessionario_id: string }).cessionario_id,
+    ),
+  );
+
+  const podeExcluir = ids.filter((id) => !idsComCessoes.has(id));
+  for (const id of ids) {
+    if (idsComCessoes.has(id)) {
+      result.falhas.push({
+        id,
+        nome: nomeMap.get(id),
+        motivo: "tem cessões vinculadas",
+      });
+    }
+  }
+
+  if (podeExcluir.length > 0) {
+    const { error, count } = await supabase
+      .from("cessionarios")
+      .delete({ count: "exact" })
+      .in("id", podeExcluir);
+    if (error) {
+      for (const id of podeExcluir) {
+        result.falhas.push({
+          id,
+          nome: nomeMap.get(id),
+          motivo: error.message,
+        });
+      }
+    } else {
+      result.ok = count ?? podeExcluir.length;
+    }
+  }
+
+  revalidatePath("/dashboard/cessionarios");
+  return result;
+}
+
+export async function ativarCessionariosEmMassa(
+  ids: string[],
+  ativo: boolean,
+): Promise<BulkResult> {
+  const result: BulkResult = { ok: 0, falhas: [] };
+  if (ids.length === 0) return result;
+
+  const supabase = await createClient();
+  const { error, count } = await supabase
+    .from("cessionarios")
+    .update({ ativo }, { count: "exact" })
+    .in("id", ids);
+
+  if (error) {
+    result.falhas = ids.map((id) => ({ id, motivo: error.message }));
+  } else {
+    result.ok = count ?? ids.length;
+  }
+
+  revalidatePath("/dashboard/cessionarios");
+  return result;
+}
+
 function toFieldErrors(
   err: import("zod").ZodError,
 ): CessionarioFormState {

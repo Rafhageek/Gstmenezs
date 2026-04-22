@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/ui/page-header";
-import { DataTable } from "@/components/ui/data-table";
 import { Badge } from "@/components/ui/feedback";
 import { SearchInput } from "@/components/ui/search-input";
 import { SortableHeader } from "@/components/ui/sortable-header";
@@ -9,6 +8,7 @@ import { MonthYearFilter } from "@/components/ui/month-year-filter";
 import { Pagination } from "@/components/ui/pagination";
 import { formatBRL, formatDataBR, formatDocumento, formatTelefone, digits } from "@/lib/format";
 import { DeleteCessionarioButton } from "./delete-cessionario-button";
+import { CessionariosTableBulk } from "./cessionarios-table-bulk";
 import type { Cessionario } from "@/types/database";
 
 export const metadata = {
@@ -152,7 +152,8 @@ export default async function CessionariosPage({
         </div>
       </div>
 
-      <DataTable
+      <CessionariosTableBulk
+        items={cessionarios.map((c) => ({ id: c.id, nome: c.nome }))}
         rowHrefs={cessionarios.map((c) => `/dashboard/cessionarios/${c.id}`)}
         headers={[
           "Nº",

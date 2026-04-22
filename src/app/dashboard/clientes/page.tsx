@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/ui/page-header";
-import { DataTable } from "@/components/ui/data-table";
 import { Badge } from "@/components/ui/feedback";
 import { SearchInput } from "@/components/ui/search-input";
 import { SortableHeader } from "@/components/ui/sortable-header";
 import { Pagination } from "@/components/ui/pagination";
 import { DeleteClienteButton } from "./delete-cliente-button";
+import { ClientesTableBulk } from "./clientes-table-bulk";
 import { formatDocumento, formatTelefone, digits } from "@/lib/format";
 import type { ClientePrincipal, InadimplenciaItem } from "@/types/database";
 
@@ -109,7 +109,8 @@ export default async function ClientesPage({
         <SearchInput placeholder="Buscar por nome ou CPF/CNPJ..." />
       </div>
 
-      <DataTable
+      <ClientesTableBulk
+        items={clientes.map((c) => ({ id: c.id, nome: c.nome }))}
         headers={[
           <SortableHeader key="nome" label="Nome" column="nome" />,
           <SortableHeader

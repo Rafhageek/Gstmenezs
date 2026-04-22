@@ -117,6 +117,93 @@ export async function excluirCliente(id: string) {
   return { error: null };
 }
 
+export interface BulkResult {
+  ok: number;
+  falhas: { id: string; nome?: string; motivo: string }[];
+}
+
+/**
+ * Exclui múltiplos clientes. Pula (não falha) os que têm cessões vinculadas,
+ * retornando-os na lista de falhas com motivo claro.
+ */
+export async function excluirClientesEmMassa(ids: string[]): Promise<BulkResult> {
+  const result: BulkResult = { ok: 0, falhas: [] };
+  if (ids.length === 0) return result;
+
+  const supabase = await createClient();
+
+  // Busca nomes pra mensagens amigáveis
+  const { data: nomesRes } = await supabase
+    .from("clientes_principais")
+    .select("id, nome")
+    .in("id", ids);
+  const nomeMap = new Map(
+    (nomesRes ?? []).map((c) => [c.id as string, c.nome as string]),
+  );
+
+  // Busca quais têm cessões vinculadas (em 1 query)
+  const { data: comCessoes } = await supabase
+    .from("cessoes_credito")
+    .select("cliente_principal_id")
+    .in("cliente_principal_id", ids);
+  const idsComCessoes = new Set(
+    (comCessoes ?? []).map(
+      (c) => (c as { cliente_principal_id: string }).cliente_principal_id,
+    ),
+  );
+
+  const podeExcluir = ids.filter((id) => !idsComCessoes.has(id));
+  for (const id of ids) {
+    if (idsComCessoes.has(id)) {
+      result.falhas.push({
+        id,
+        nome: nomeMap.get(id),
+        motivo: "tem cessões vinculadas",
+      });
+    }
+  }
+
+  if (podeExcluir.length > 0) {
+    const { error, count } = await supabase
+      .from("clientes_principais")
+      .delete({ count: "exact" })
+      .in("id", podeExcluir);
+    if (error) {
+      for (const id of podeExcluir) {
+        result.falhas.push({ id, nome: nomeMap.get(id), motivo: error.message });
+      }
+    } else {
+      result.ok = count ?? podeExcluir.length;
+    }
+  }
+
+  revalidatePath("/dashboard/clientes");
+  return result;
+}
+
+export async function ativarClientesEmMassa(
+  ids: string[],
+  ativo: boolean,
+): Promise<BulkResult> {
+  const result: BulkResult = { ok: 0, falhas: [] };
+  if (ids.length === 0) return result;
+
+  const supabase = await createClient();
+  const { error, count } = await supabase
+    .from("clientes_principais")
+    .update({ ativo }, { count: "exact" })
+    .in("id", ids);
+
+  if (error) {
+    result.falhas = ids.map((id) => ({ id, motivo: error.message }));
+  } else {
+    result.ok = count ?? ids.length;
+  }
+
+  revalidatePath("/dashboard/clientes");
+  return result;
+}
+
 function toFieldErrors(err: import("zod").ZodError): ClienteFormState {
   const fieldErrors: Record<string, string> = {};
   for (const issue of err.issues) {

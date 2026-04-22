@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { BrandLogo } from "@/components/brand-logo";
+import { BalancaJusticaAnimada } from "@/components/balanca-justica-animada";
 import { getConfiguracoes } from "@/lib/configuracoes";
 import { LoginForm } from "./login-form";
 
@@ -58,7 +59,7 @@ export default async function LoginPage() {
   );
 }
 
-/** Ambiente visual: gradientes radiais sutis + grid de pontos. */
+/** Ambiente visual: gradientes radiais sutis + grid de pontos + balança da justiça. */
 function BackgroundAmbiente() {
   return (
     <>
@@ -87,6 +88,20 @@ function BackgroundAmbiente() {
             "radial-gradient(ellipse at center, black 40%, transparent 80%)",
         }}
       />
+      {/* Balança da justiça — elemento temático (desktop apenas, lado esquerdo) */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute left-[8%] top-1/2 hidden -translate-y-1/2 opacity-[0.28] lg:block xl:left-[14%] xl:opacity-[0.38]"
+      >
+        <BalancaJusticaAnimada size={440} />
+      </div>
+      {/* Balança da justiça — elemento temático (mobile: topo, bem discreta) */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 opacity-[0.12] lg:hidden"
+      >
+        <BalancaJusticaAnimada size={260} />
+      </div>
     </>
   );
 }

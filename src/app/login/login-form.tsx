@@ -2,28 +2,15 @@
 
 import { useActionState, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
-import { signIn, signUp, type AuthFormState } from "./actions";
+import { signIn, type AuthFormState } from "./actions";
 
 const initial: AuthFormState = { error: null };
 const STORAGE_KEY = "painelmnz:email_lembrado";
 
 export function LoginForm() {
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
-
   return (
     <div className="mt-6">
-      <div className="animate-fade-in mb-6 flex rounded-lg bg-black/30 p-1">
-        <Tab active={mode === "signin"} onClick={() => setMode("signin")}>
-          Entrar
-        </Tab>
-        <Tab active={mode === "signup"} onClick={() => setMode("signup")}>
-          Criar conta
-        </Tab>
-      </div>
-
-      {/* Forms isolados — cada um com seu próprio useActionState.
-          Unmount do outro limpa qualquer erro residual. */}
-      {mode === "signin" ? <SignInForm /> : <SignUpForm />}
+      <SignInForm />
     </div>
   );
 }
@@ -106,7 +93,7 @@ function SignInForm() {
 
       {state.error && <ErrorAlert message={state.error} />}
 
-      <SubmitButton mode="signin" />
+      <SubmitButton />
 
       <p className="pt-2 text-center text-[11px] text-[var(--muted)]/70">
         Seu login é protegido por criptografia. Credenciais não são armazenadas
@@ -117,83 +104,11 @@ function SignInForm() {
 }
 
 /* ============================================================
- * Form: Criar conta
- * ============================================================ */
-function SignUpForm() {
-  const [state, formAction] = useActionState(signUp, initial);
-
-  return (
-    <form action={formAction} className="space-y-4">
-      <Field label="Nome completo" icon={<UserIcon />}>
-        <input
-          name="nome"
-          type="text"
-          required
-          placeholder="Dr(a). Nome Sobrenome"
-          autoComplete="name"
-          className={inputClass}
-        />
-      </Field>
-
-      <Field label="E-mail" icon={<MailIcon />}>
-        <input
-          name="email"
-          type="email"
-          required
-          autoComplete="email"
-          placeholder="advogado@menezes.adv.br"
-          className={inputClass}
-        />
-      </Field>
-
-      <Field label="Senha" icon={<LockIcon />}>
-        <PasswordInput required minLength={8} />
-      </Field>
-
-      {state.error && (
-        <ErrorAlert
-          message={state.error}
-          variant={
-            state.error.startsWith("Conta criada") ? "info" : "danger"
-          }
-        />
-      )}
-
-      <SubmitButton mode="signup" />
-    </form>
-  );
-}
-
-/* ============================================================
  * Shared
  * ============================================================ */
 
 const inputClass =
   "w-full rounded-lg border border-[var(--border)] bg-black/30 py-2.5 pl-10 pr-3 text-sm text-foreground outline-none transition-all duration-150 placeholder:text-[var(--muted)]/60 focus:border-[var(--gold)] focus:ring-1 focus:ring-[var(--gold)]";
-
-function Tab({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-        active
-          ? "bg-[var(--background-elevated)] text-foreground shadow"
-          : "text-[var(--muted)] hover:text-foreground"
-      }`}
-    >
-      {children}
-    </button>
-  );
-}
 
 function Field({
   label,
@@ -281,7 +196,7 @@ function ErrorAlert({
   );
 }
 
-function SubmitButton({ mode }: { mode: "signin" | "signup" }) {
+function SubmitButton() {
   const { pending } = useFormStatus();
   return (
     <button
@@ -297,15 +212,7 @@ function SubmitButton({ mode }: { mode: "signin" | "signup" }) {
           className="h-4 w-4 animate-[spin-slow_0.8s_linear_infinite] rounded-full border-2 border-[var(--background)] border-t-transparent"
         />
       )}
-      <span>
-        {pending
-          ? mode === "signin"
-            ? "Autenticando..."
-            : "Criando conta..."
-          : mode === "signin"
-            ? "Entrar no painel"
-            : "Criar minha conta"}
-      </span>
+      <span>{pending ? "Autenticando..." : "Entrar no painel"}</span>
     </button>
   );
 }
@@ -341,15 +248,6 @@ function LockIcon() {
     <svg {...iconProps()}>
       <rect x="4" y="11" width="16" height="10" rx="2" />
       <path d="M8 11V7a4 4 0 1 1 8 0v4" />
-    </svg>
-  );
-}
-
-function UserIcon() {
-  return (
-    <svg {...iconProps()}>
-      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-      <circle cx="12" cy="7" r="4" />
     </svg>
   );
 }

@@ -141,6 +141,11 @@ export function parsePlanilhaHistorico(
     for (let k = idxTotalRecebido - 1; k >= Math.max(0, idxTotalRecebido - 6); k--) {
       const candidato = celulas[k].trim();
       if (!candidato) continue;
+      // Ignora células de erro do Excel (#ERRO!, #DIV/0!, #REF!, #VALUE!, #NAME?)
+      // que apareciam como "nome" do cessionário (ex: Pinguim virava "#ERRO!").
+      if (/^#(ERRO|DIV\/0|REF|VALUE|NAME|N\/A|NULL)/i.test(candidato)) {
+        continue;
+      }
       // Ignora rótulos comuns que podem aparecer antes
       if (
         /^(%\s*a?\s*receber|\d+\s*%|total|saldo|cess[ãa]o|recebimentos?|obs\.?|data)$/i.test(

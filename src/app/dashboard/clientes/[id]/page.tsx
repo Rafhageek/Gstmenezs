@@ -100,6 +100,18 @@ export default async function ClienteDetalhesPage({ params }: Props) {
         >
           Editar cadastro
         </Link>
+        <Link
+          href="/dashboard/cessoes/nova"
+          className="inline-flex items-center gap-2 rounded-lg border border-[var(--gold)]/40 bg-transparent px-4 py-2 text-xs font-semibold text-[var(--gold)] transition-all hover:border-[var(--gold)] hover:bg-[var(--gold)]/10"
+        >
+          + Nova cessão
+        </Link>
+        <Link
+          href="/dashboard/cessionarios/novo"
+          className="inline-flex items-center gap-2 rounded-lg border border-[var(--gold)]/40 bg-transparent px-4 py-2 text-xs font-semibold text-[var(--gold)] transition-all hover:border-[var(--gold)] hover:bg-[var(--gold)]/10"
+        >
+          + Novo cessionário
+        </Link>
         <a
           href={`/api/relatorios/extrato-cliente/${cliente.id}`}
           target="_blank"

@@ -197,18 +197,6 @@ export default async function DashboardPage({
         </div>
       </header>
 
-      {/* Atalhos de acao rapida */}
-      <section
-        data-no-print
-        className="mb-6 flex flex-wrap items-center justify-center gap-2"
-      >
-        <AtalhoNovo href="/dashboard/clientes/novo" label="+ Novo cliente" />
-        <AtalhoNovo
-          href="/dashboard/cessionarios/novo"
-          label="+ Novo cessionário"
-        />
-        <AtalhoNovo href="/dashboard/cessoes/nova" label="+ Nova cessão" />
-      </section>
 
       {/* 3 KPIs na mesma simetria (Saldo a receber | Valores recebidos | Valor a receber) */}
       <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -284,10 +272,9 @@ export default async function DashboardPage({
         </div>
       </section>
 
-      {/* Cards de acao do dia — Vence esta semana + Top inadimplentes */}
-      <section className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+      {/* Card de acao do dia — Vence esta semana */}
+      <section className="mt-6">
         <VenceSemanaCard proximas={proximas} />
-        <TopInadimplentesCard inadimplentes={inadimplentes} />
       </section>
 
       {/* Pizza + Assistente IA lado a lado */}
@@ -314,17 +301,6 @@ export default async function DashboardPage({
         <FluxoMensalChart data={fluxo} />
       </section>
     </div>
-  );
-}
-
-function AtalhoNovo({ href, label }: { href: string; label: string }) {
-  return (
-    <Link
-      href={href}
-      className="inline-flex items-center gap-1 rounded-full border border-[var(--gold)]/40 bg-transparent px-4 py-1.5 text-xs font-semibold text-[var(--gold)] transition-all hover:border-[var(--gold)] hover:bg-[var(--gold)]/10"
-    >
-      {label}
-    </Link>
   );
 }
 
@@ -439,87 +415,6 @@ function VenceSemanaCard({ proximas }: { proximas: ParcelaProxima[] }) {
         >
           Ver todas ({proximas.length}) →
         </Link>
-      )}
-    </article>
-  );
-}
-
-function TopInadimplentesCard({
-  inadimplentes,
-}: {
-  inadimplentes: InadimplenciaItem[];
-}) {
-  // Agrupa por cliente (soma valores, pega maior dias_atraso)
-  const porCliente = new Map<
-    string,
-    { nome: string; total: number; maiorAtraso: number; clienteId: string }
-  >();
-  for (const i of inadimplentes) {
-    const atual = porCliente.get(i.cliente_id);
-    if (atual) {
-      atual.total += Number(i.valor);
-      atual.maiorAtraso = Math.max(atual.maiorAtraso, i.dias_atraso);
-    } else {
-      porCliente.set(i.cliente_id, {
-        nome: i.cliente_nome,
-        total: Number(i.valor),
-        maiorAtraso: i.dias_atraso,
-        clienteId: i.cliente_id,
-      });
-    }
-  }
-  const ranking = Array.from(porCliente.values())
-    .sort((a, b) => b.total - a.total)
-    .slice(0, 5);
-
-  const totalDevido = ranking.reduce((s, r) => s + r.total, 0);
-
-  return (
-    <article className="rounded-xl border border-[var(--danger)]/30 bg-[var(--background-elevated)] p-5">
-      <header className="mb-4 flex items-start justify-between gap-2">
-        <div>
-          <p className="text-xs uppercase tracking-wide text-[var(--danger)]">
-            Top inadimplentes
-          </p>
-          <p className="mt-0.5 text-xs text-[var(--muted)]/70">
-            {ranking.length === 0
-              ? "Tudo em dia"
-              : `${formatBRL(totalDevido)} nos ${ranking.length} maiores`}
-          </p>
-        </div>
-      </header>
-
-      {ranking.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-[var(--success)]/40 bg-[var(--success)]/5 p-6 text-center">
-          <p className="text-sm text-[var(--success)]">
-            ✓ Nenhum cliente em atraso
-          </p>
-          <p className="mt-1 text-xs text-[var(--muted)]">Carteira em dia.</p>
-        </div>
-      ) : (
-        <ul className="space-y-2">
-          {ranking.map((r) => (
-            <li key={r.clienteId}>
-              <Link
-                href={`/dashboard/clientes/${r.clienteId}`}
-                className="flex items-center justify-between gap-3 rounded-lg border border-[var(--border)] bg-black/20 px-3 py-2 transition-colors hover:border-[var(--danger)]/40 hover:bg-[var(--danger)]/5"
-              >
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">{r.nome}</p>
-                  <p className="text-[10px] text-[var(--muted)]">
-                    {r.maiorAtraso} dia{r.maiorAtraso === 1 ? "" : "s"} de
-                    atraso
-                  </p>
-                </div>
-                <div className="shrink-0 text-right">
-                  <p className="font-mono text-sm text-[var(--danger)]">
-                    {formatBRL(r.total)}
-                  </p>
-                </div>
-              </Link>
-            </li>
-          ))}
-        </ul>
       )}
     </article>
   );

@@ -6,7 +6,8 @@ import { DataTable } from "@/components/ui/data-table";
 import { Badge } from "@/components/ui/feedback";
 import { CessoesPizzaChart } from "@/components/charts/cessoes-pizza-chart";
 import { DonutPct } from "@/components/charts/donut-pct";
-import { formatBRL, formatDataBR, formatDocumento } from "@/lib/format";
+import { WhatsAppShareButton } from "@/components/whatsapp-share-button";
+import { formatBRL, formatDataBR, formatDocumento, digits } from "@/lib/format";
 import type { Cessionario, CessaoResumo } from "@/types/database";
 
 export const metadata = {
@@ -121,6 +122,20 @@ export default async function CessionarioDetalhesPage({ params }: Props) {
         >
           Editar cadastro
         </Link>
+        <a
+          href={`/api/relatorios/extrato-cessionario/${cessionario.id}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 rounded-lg bg-[var(--gold)] px-4 py-2 text-xs font-semibold text-[var(--background)] hover:bg-[var(--gold-hover)]"
+        >
+          ⬇ Extrato PDF
+        </a>
+        <WhatsAppShareButton
+          pdfUrl={`/api/relatorios/extrato-cessionario/${cessionario.id}`}
+          filename={`extrato-cessionario-${cessionario.nome.replace(/\s+/g, "-").toLowerCase()}.pdf`}
+          mensagem={`Prezado(a) ${cessionario.nome}, segue o seu extrato das cessões vinculadas.\n\nAtenciosamente, Menezes Advocacia.`}
+          telefone={prepararTelWa(cessionario.telefone)}
+        />
       </div>
 
       <section className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-4">
@@ -284,6 +299,13 @@ export default async function CessionarioDetalhesPage({ params }: Props) {
       </section>
     </div>
   );
+}
+
+function prepararTelWa(raw: string | null | undefined): string | undefined {
+  if (!raw) return undefined;
+  const d = digits(raw);
+  if (d.length !== 10 && d.length !== 11) return undefined;
+  return `55${d}`;
 }
 
 function Kpi({

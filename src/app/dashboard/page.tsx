@@ -5,6 +5,7 @@ import { CessoesPizzaChart } from "@/components/charts/cessoes-pizza-chart";
 import { AnimatedCounter } from "@/components/ui/animated-counter";
 import { MonthYearFilter } from "@/components/ui/month-year-filter";
 import { AssistenteWidget } from "@/components/dashboard/assistente-widget";
+import { PrintButton } from "@/components/print-button";
 import { formatBRL } from "@/lib/format";
 import type {
   CessaoResumo,
@@ -149,8 +150,9 @@ export default async function DashboardPage({
             Filtrado por: <strong>{labelPeriodo}</strong>
           </p>
         )}
-        <div className="mt-5 flex justify-center">
+        <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
           <MonthYearFilter label="Período" />
+          <PrintButton label="Imprimir / PDF" />
         </div>
       </header>
 
@@ -237,7 +239,9 @@ export default async function DashboardPage({
           data={graficoGeral}
           colors={["#c9a961", "#10b981"]}
         />
-        <AssistenteWidget />
+        <div data-no-print>
+          <AssistenteWidget />
+        </div>
       </section>
 
       {/* Gráfico fluxo mensal (Aging removido a pedido do cliente) */}

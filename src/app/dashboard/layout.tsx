@@ -58,7 +58,6 @@ export default async function DashboardLayout({
     { href: "/dashboard", label: "Visão geral" },
     { href: "/dashboard/clientes", label: "Clientes" },
     { href: "/dashboard/cessionarios", label: "Cessionários" },
-    { href: "/dashboard/relatorios", label: "Relatórios" },
     { href: "/dashboard/ajuda", label: "Ajuda" },
     { href: "/dashboard/perfil/biometria", label: "Biometria" },
     ...(profile?.role === "admin"
@@ -102,8 +101,6 @@ export default async function DashboardLayout({
             </NavLink>
 
             <NavLink href="/dashboard/clientes">Clientes</NavLink>
-
-            <NavLink href="/dashboard/relatorios">Relatórios</NavLink>
           </nav>
 
           {/* Ações à direita */}

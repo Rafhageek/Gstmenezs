@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/ui/page-header";
 import { DataTable } from "@/components/ui/data-table";
+import { Pagination } from "@/components/ui/pagination";
 import { Badge } from "@/components/ui/feedback";
 import { WhatsAppShareButton } from "@/components/whatsapp-share-button";
 import {
@@ -22,12 +23,21 @@ export const metadata = {
   title: "Detalhes do cliente — Painel Financeiro",
 };
 
+const PAGE_SIZE = 40;
+
 interface Props {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ page?: string }>;
 }
 
-export default async function ClienteDetalhesPage({ params }: Props) {
+export default async function ClienteDetalhesPage({
+  params,
+  searchParams,
+}: Props) {
   const { id } = await params;
+  const sp = await searchParams;
+  const page = Math.max(1, Number(sp.page) || 1);
+  const offset = (page - 1) * PAGE_SIZE;
   const supabase = await createClient();
 
   const [clienteRes, extratoRes] = await Promise.all([
@@ -46,15 +56,17 @@ export default async function ClienteDetalhesPage({ params }: Props) {
   if (!clienteRes.data) notFound();
   const cliente = clienteRes.data;
 
-  const { data: cessoes } = await supabase
+  const { data: cessoes, count: totalCessoes } = await supabase
     .from("v_cessoes_resumo")
-    .select("*")
+    .select("*", { count: "exact" })
     .eq("cliente_id", id)
     .order("data_cessao", { ascending: false })
+    .range(offset, offset + PAGE_SIZE - 1)
     .returns<CessaoResumo[]>();
 
   const extrato = extratoRes.data;
   const listaCessoes = cessoes ?? [];
+  const total = totalCessoes ?? listaCessoes.length;
 
   // Conta parcelas em atraso pra esse cliente
   const { count: parcelasAtrasadas } = await supabase
@@ -174,7 +186,7 @@ export default async function ClienteDetalhesPage({ params }: Props) {
 
       <section>
         <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">
-          Cessões deste cliente ({listaCessoes.length})
+          Cessões deste cliente ({total})
         </h2>
         <DataTable
           headers={[
@@ -224,6 +236,7 @@ export default async function ClienteDetalhesPage({ params }: Props) {
             </p>
           }
         />
+        <Pagination total={total} pageSize={PAGE_SIZE} currentPage={page} />
       </section>
     </div>
   );

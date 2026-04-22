@@ -6,14 +6,28 @@ import { AnimatedCounter } from "@/components/ui/animated-counter";
 import { MonthYearFilter } from "@/components/ui/month-year-filter";
 import { AssistenteWidget } from "@/components/dashboard/assistente-widget";
 import { PrintButton } from "@/components/print-button";
-import { formatBRL } from "@/lib/format";
+import { formatBRL, formatDataBR } from "@/lib/format";
 import type {
   CessaoResumo,
   FluxoMensal,
   InadimplenciaItem,
   ComparativoMes,
   ResumoGeral,
+  ParcelaProxima,
+  Profile,
 } from "@/types/database";
+
+function saudacaoHora(): string {
+  const hora = new Date().toLocaleString("en-US", {
+    timeZone: "America/Sao_Paulo",
+    hour: "numeric",
+    hour12: false,
+  });
+  const h = Number(hora);
+  if (h >= 6 && h < 12) return "Bom dia";
+  if (h >= 12 && h < 18) return "Boa tarde";
+  return "Boa noite";
+}
 
 export const metadata = {
   title: "Visão geral — Painel Financeiro",
@@ -72,24 +86,44 @@ export default async function DashboardPage({
   if (dataDe) cessoesQuery = cessoesQuery.gte("data_cessao", dataDe);
   if (dataAte) cessoesQuery = cessoesQuery.lte("data_cessao", dataAte);
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   const [
     cessoesRes,
     fluxoRes,
     inadRes,
     compRes,
     resumoRes,
+    proximasRes,
+    profileRes,
   ] = await Promise.all([
     cessoesQuery.returns<CessaoResumo[]>(),
     supabase.from("v_fluxo_mensal").select("*").returns<FluxoMensal[]>(),
     supabase
       .from("v_inadimplencia")
       .select("*")
+      .order("valor", { ascending: false })
       .returns<InadimplenciaItem[]>(),
     supabase
       .from("v_comparativo_mes")
       .select("*")
       .maybeSingle<ComparativoMes>(),
     supabase.from("v_resumo_geral").select("*").maybeSingle<ResumoGeral>(),
+    supabase
+      .from("v_parcelas_proximas")
+      .select("*")
+      .lte("dias_ate_vencer", 7)
+      .order("dias_ate_vencer", { ascending: true })
+      .returns<ParcelaProxima[]>(),
+    user
+      ? supabase
+          .from("profiles")
+          .select("nome")
+          .eq("id", user.id)
+          .maybeSingle<Pick<Profile, "nome">>()
+      : Promise.resolve({ data: null }),
   ]);
 
   if (cessoesRes.error) {
@@ -101,6 +135,8 @@ export default async function DashboardPage({
   const inadimplentes = inadRes.data ?? [];
   const comparativo = compRes.data;
   const resumoGeral = resumoRes.data;
+  const proximas = proximasRes.data ?? [];
+  const nomeUsuario = profileRes.data?.nome?.split(" ")[0] ?? null;
 
   const cessoesAtivas = cessoes.filter((c) => c.status !== "quitada");
   const liquidadasNoFiltro = cessoes.filter((c) => c.status === "quitada");
@@ -142,19 +178,37 @@ export default async function DashboardPage({
   return (
     <div>
       <header className="mb-8 text-center">
-        <h1 className="text-4xl font-semibold tracking-tight md:text-5xl">
+        <p className="text-xs uppercase tracking-[0.3em] text-[var(--gold)]">
           Visão geral
+        </p>
+        <h1 className="mt-2 text-3xl font-semibold tracking-tight md:text-4xl">
+          {saudacaoHora()}
+          {nomeUsuario ? `, ${nomeUsuario}` : ""}
         </h1>
         {labelPeriodo && (
           <p className="mt-2 text-sm text-[var(--gold)]">
             Filtrado por: <strong>{labelPeriodo}</strong>
           </p>
         )}
-        <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+        <FiltrosRapidos current={{ mes: sp.mes, ano: sp.ano }} />
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
           <MonthYearFilter label="Período" />
           <PrintButton label="Imprimir / PDF" />
         </div>
       </header>
+
+      {/* Atalhos de acao rapida */}
+      <section
+        data-no-print
+        className="mb-6 flex flex-wrap items-center justify-center gap-2"
+      >
+        <AtalhoNovo href="/dashboard/clientes/novo" label="+ Novo cliente" />
+        <AtalhoNovo
+          href="/dashboard/cessionarios/novo"
+          label="+ Novo cessionário"
+        />
+        <AtalhoNovo href="/dashboard/cessoes/nova" label="+ Nova cessão" />
+      </section>
 
       {/* 3 KPIs na mesma simetria (Saldo a receber | Valores recebidos | Valor a receber) */}
       <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -182,16 +236,16 @@ export default async function DashboardPage({
         />
       </section>
 
-      {/* Quantidade de cessões (contadores) */}
+      {/* Meus contratos (contadores) */}
       <section className="mt-4 rounded-xl border border-[var(--border)] bg-[var(--background-elevated)] p-5">
         <header className="mb-3 flex items-end justify-between gap-2">
           <div>
             <p className="text-xs uppercase tracking-wide text-[var(--muted)]">
-              Quantidade de cessões
+              Meus contratos
             </p>
             <p className="mt-0.5 text-xs text-[var(--muted)]/70">
-              Total de {cessoes.length} cessão
-              {cessoes.length === 1 ? "" : "ões"} cadastrada
+              Total de {cessoes.length} contrato
+              {cessoes.length === 1 ? "" : "s"} cadastrado
               {cessoes.length === 1 ? "" : "s"}
             </p>
           </div>
@@ -199,18 +253,18 @@ export default async function DashboardPage({
             href="/dashboard/cessoes"
             className="text-xs text-[var(--gold)] hover:underline"
           >
-            Ver cessões →
+            Ver todos →
           </Link>
         </header>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           <Contador
-            label="Ativas"
+            label="Ativos"
             value={contadores.ativas}
             href="/dashboard/cessoes?status=ativa"
             accent="gold"
           />
           <Contador
-            label="Liquidadas"
+            label="Liquidados"
             value={contadores.pagas}
             href="/dashboard/cessoes?filtro=liquidadas"
             accent="success"
@@ -222,12 +276,18 @@ export default async function DashboardPage({
             accent="danger"
           />
           <Contador
-            label="Canceladas"
+            label="Cancelados"
             value={contadores.canceladas}
             href="/dashboard/cessoes?status=cancelada"
             accent="muted"
           />
         </div>
+      </section>
+
+      {/* Cards de acao do dia — Vence esta semana + Top inadimplentes */}
+      <section className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <VenceSemanaCard proximas={proximas} />
+        <TopInadimplentesCard inadimplentes={inadimplentes} />
       </section>
 
       {/* Pizza + Assistente IA lado a lado */}
@@ -238,6 +298,11 @@ export default async function DashboardPage({
           } · ${resumoGeral?.qtd_a_receber ?? cessoesAtivas.length} a receber`}
           data={graficoGeral}
           colors={["#c9a961", "#10b981"]}
+          itemHrefs={graficoGeral.map((d) =>
+            d.name === "A receber"
+              ? "/dashboard/cessoes?status=ativa"
+              : "/dashboard/cessoes?filtro=liquidadas",
+          )}
         />
         <div data-no-print>
           <AssistenteWidget />
@@ -249,6 +314,214 @@ export default async function DashboardPage({
         <FluxoMensalChart data={fluxo} />
       </section>
     </div>
+  );
+}
+
+function AtalhoNovo({ href, label }: { href: string; label: string }) {
+  return (
+    <Link
+      href={href}
+      className="inline-flex items-center gap-1 rounded-full border border-[var(--gold)]/40 bg-transparent px-4 py-1.5 text-xs font-semibold text-[var(--gold)] transition-all hover:border-[var(--gold)] hover:bg-[var(--gold)]/10"
+    >
+      {label}
+    </Link>
+  );
+}
+
+function FiltrosRapidos({
+  current,
+}: {
+  current: { mes?: string; ano?: string };
+}) {
+  const hoje = new Date();
+  const mesAtual = String(hoje.getMonth() + 1);
+  const anoAtual = String(hoje.getFullYear());
+
+  const isTudo = !current.mes && !current.ano;
+  const isEsteMes = current.mes === mesAtual && current.ano === anoAtual;
+  const isEsteAno = !current.mes && current.ano === anoAtual;
+
+  const chips = [
+    { label: "Tudo", href: "/dashboard", active: isTudo },
+    {
+      label: "Este mês",
+      href: `/dashboard?mes=${mesAtual}&ano=${anoAtual}`,
+      active: isEsteMes,
+    },
+    {
+      label: "Este ano",
+      href: `/dashboard?ano=${anoAtual}`,
+      active: isEsteAno,
+    },
+  ];
+
+  return (
+    <nav
+      data-no-print
+      className="mt-4 flex flex-wrap items-center justify-center gap-1.5"
+    >
+      {chips.map((c) => (
+        <Link
+          key={c.label}
+          href={c.href}
+          className={`rounded-full px-3 py-1 text-[11px] font-medium transition-colors ${
+            c.active
+              ? "bg-[var(--gold)] text-[var(--background)]"
+              : "border border-[var(--border)] bg-black/20 text-[var(--muted)] hover:border-[var(--gold)]/50 hover:text-foreground"
+          }`}
+        >
+          {c.label}
+        </Link>
+      ))}
+    </nav>
+  );
+}
+
+function VenceSemanaCard({ proximas }: { proximas: ParcelaProxima[] }) {
+  const top = proximas.slice(0, 5);
+  const total = proximas.reduce((s, p) => s + Number(p.valor), 0);
+
+  return (
+    <article className="rounded-xl border border-[var(--gold)]/30 bg-[var(--background-elevated)] p-5">
+      <header className="mb-4 flex items-start justify-between gap-2">
+        <div>
+          <p className="text-xs uppercase tracking-wide text-[var(--gold)]">
+            Vence esta semana
+          </p>
+          <p className="mt-0.5 text-xs text-[var(--muted)]/70">
+            Próximos 7 dias · {formatBRL(total)} em {proximas.length}{" "}
+            parcela{proximas.length === 1 ? "" : "s"}
+          </p>
+        </div>
+      </header>
+
+      {top.length === 0 ? (
+        <div className="rounded-lg border border-dashed border-[var(--border)] p-6 text-center">
+          <p className="text-xs text-[var(--muted)]">
+            Nenhum vencimento nos próximos 7 dias.
+          </p>
+        </div>
+      ) : (
+        <ul className="space-y-2">
+          {top.map((p) => (
+            <li key={p.pagamento_id}>
+              <Link
+                href={`/dashboard/cessoes/${p.cessao_id}`}
+                className="flex items-center justify-between gap-3 rounded-lg border border-[var(--border)] bg-black/20 px-3 py-2 transition-colors hover:border-[var(--gold)]/40 hover:bg-[var(--gold)]/5"
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium">
+                    {p.cliente_nome}
+                  </p>
+                  <p className="text-[10px] text-[var(--muted)]">
+                    Parc. {p.numero_parcela} ·{" "}
+                    {p.dias_ate_vencer === 0
+                      ? "Vence hoje"
+                      : `em ${p.dias_ate_vencer} dia${p.dias_ate_vencer === 1 ? "" : "s"}`}{" "}
+                    · {formatDataBR(p.data_vencimento)}
+                  </p>
+                </div>
+                <div className="shrink-0 text-right">
+                  <p className="font-mono text-sm text-[var(--gold)]">
+                    {formatBRL(p.valor)}
+                  </p>
+                </div>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {proximas.length > top.length && (
+        <Link
+          href="/dashboard/agenda"
+          className="mt-3 block text-center text-xs text-[var(--gold)] hover:underline"
+        >
+          Ver todas ({proximas.length}) →
+        </Link>
+      )}
+    </article>
+  );
+}
+
+function TopInadimplentesCard({
+  inadimplentes,
+}: {
+  inadimplentes: InadimplenciaItem[];
+}) {
+  // Agrupa por cliente (soma valores, pega maior dias_atraso)
+  const porCliente = new Map<
+    string,
+    { nome: string; total: number; maiorAtraso: number; clienteId: string }
+  >();
+  for (const i of inadimplentes) {
+    const atual = porCliente.get(i.cliente_id);
+    if (atual) {
+      atual.total += Number(i.valor);
+      atual.maiorAtraso = Math.max(atual.maiorAtraso, i.dias_atraso);
+    } else {
+      porCliente.set(i.cliente_id, {
+        nome: i.cliente_nome,
+        total: Number(i.valor),
+        maiorAtraso: i.dias_atraso,
+        clienteId: i.cliente_id,
+      });
+    }
+  }
+  const ranking = Array.from(porCliente.values())
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 5);
+
+  const totalDevido = ranking.reduce((s, r) => s + r.total, 0);
+
+  return (
+    <article className="rounded-xl border border-[var(--danger)]/30 bg-[var(--background-elevated)] p-5">
+      <header className="mb-4 flex items-start justify-between gap-2">
+        <div>
+          <p className="text-xs uppercase tracking-wide text-[var(--danger)]">
+            Top inadimplentes
+          </p>
+          <p className="mt-0.5 text-xs text-[var(--muted)]/70">
+            {ranking.length === 0
+              ? "Tudo em dia"
+              : `${formatBRL(totalDevido)} nos ${ranking.length} maiores`}
+          </p>
+        </div>
+      </header>
+
+      {ranking.length === 0 ? (
+        <div className="rounded-lg border border-dashed border-[var(--success)]/40 bg-[var(--success)]/5 p-6 text-center">
+          <p className="text-sm text-[var(--success)]">
+            ✓ Nenhum cliente em atraso
+          </p>
+          <p className="mt-1 text-xs text-[var(--muted)]">Carteira em dia.</p>
+        </div>
+      ) : (
+        <ul className="space-y-2">
+          {ranking.map((r) => (
+            <li key={r.clienteId}>
+              <Link
+                href={`/dashboard/clientes/${r.clienteId}`}
+                className="flex items-center justify-between gap-3 rounded-lg border border-[var(--border)] bg-black/20 px-3 py-2 transition-colors hover:border-[var(--danger)]/40 hover:bg-[var(--danger)]/5"
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium">{r.nome}</p>
+                  <p className="text-[10px] text-[var(--muted)]">
+                    {r.maiorAtraso} dia{r.maiorAtraso === 1 ? "" : "s"} de
+                    atraso
+                  </p>
+                </div>
+                <div className="shrink-0 text-right">
+                  <p className="font-mono text-sm text-[var(--danger)]">
+                    {formatBRL(r.total)}
+                  </p>
+                </div>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </article>
   );
 }
 

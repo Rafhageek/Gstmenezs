@@ -7,6 +7,8 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from "recharts";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { formatBRL } from "@/lib/format";
 
 interface PizzaData {
@@ -24,6 +26,8 @@ interface Props {
   centerLabel?: string;
   /** Texto pequeno abaixo do centerLabel (ex: "recebido"). */
   centerSub?: string;
+  /** Hrefs por item (paralelo a `data`). Se presente, fatias e legenda viram links. */
+  itemHrefs?: (string | null | undefined)[];
 }
 
 const DEFAULT_COLORS = [
@@ -42,8 +46,16 @@ export function CessoesPizzaChart({
   colors = DEFAULT_COLORS,
   centerLabel,
   centerSub,
+  itemHrefs,
 }: Props) {
+  const router = useRouter();
   const total = data.reduce((sum, d) => sum + d.value, 0);
+  const isClickable = Boolean(itemHrefs && itemHrefs.some((h) => !!h));
+
+  function handleSliceClick(_: unknown, index: number) {
+    const href = itemHrefs?.[index];
+    if (href) router.push(href);
+  }
 
   return (
     <div className="rounded-xl border border-[var(--border)] bg-[var(--background-elevated)] p-5">
@@ -80,6 +92,8 @@ export function CessoesPizzaChart({
                     dataKey="value"
                     stroke="#0a1628"
                     strokeWidth={2}
+                    onClick={isClickable ? handleSliceClick : undefined}
+                    className={isClickable ? "cursor-pointer" : undefined}
                   >
                     {data.map((_, i) => (
                       <Cell key={i} fill={colors[i % colors.length]} />
@@ -116,11 +130,9 @@ export function CessoesPizzaChart({
         <ul className="space-y-2 text-xs">
           {data.map((d, i) => {
             const pct = total > 0 ? (d.value / total) * 100 : 0;
-            return (
-              <li
-                key={d.name}
-                className="flex items-start justify-between gap-3"
-              >
+            const href = itemHrefs?.[i];
+            const conteudo = (
+              <>
                 <div className="flex items-start gap-2">
                   <span
                     aria-hidden
@@ -133,6 +145,22 @@ export function CessoesPizzaChart({
                   <div className="font-mono">{formatBRL(d.value)}</div>
                   <div className="text-[var(--muted)]">{pct.toFixed(1)}%</div>
                 </div>
+              </>
+            );
+            return (
+              <li key={d.name}>
+                {href ? (
+                  <Link
+                    href={href}
+                    className="flex items-start justify-between gap-3 rounded-md px-1 py-0.5 -mx-1 transition-colors hover:bg-[var(--gold)]/10"
+                  >
+                    {conteudo}
+                  </Link>
+                ) : (
+                  <div className="flex items-start justify-between gap-3">
+                    {conteudo}
+                  </div>
+                )}
               </li>
             );
           })}

@@ -46,12 +46,16 @@ function extrairCelulas(html: string): string[] {
 /** Parse "R$ 29.390,00" ou "- R$ 5.000,00" → number. */
 function parseValorBRL(raw: string): number | null {
   if (!raw) return null;
+  // Datas (10/24/2025) viram 10242025 sem essa guarda — bug que inflava
+  // saldo inicial em 4 abas (HM, MB PART, DATEC, SL-PRO LIFE).
+  if (raw.includes("/")) return null;
   const s = raw.replace(/R\$/g, "").replace(/\s/g, "").trim();
   if (!s || s === "-") return null;
+  // Tem que ter dígito e formato monetário (sem caracteres estranhos).
+  if (!/[\d]/.test(s)) return null;
+  if (!/^[-(]?[\d.,]+\)?$/.test(s)) return null;
   const negativo = s.startsWith("-") || s.includes("(");
-  // Remove tudo que não seja dígito ou vírgula ou ponto
   const limpo = s.replace(/[^\d,.-]/g, "").replace(/^-/, "");
-  // Formato BR: pontos = milhares, vírgula = decimal
   const parts = limpo.split(",");
   if (parts.length > 2) return null;
   const inteiro = parts[0].replace(/\./g, "");
@@ -156,26 +160,8 @@ export function parsePlanilhaHistorico(
     avisos.push("Nome do cessionário inferido do nome do arquivo.");
   }
 
-  // 3) Saldo inicial: procura "SALDO TOTAL INICIAL" → próximo valor BRL
-  let saldoInicial = 0;
-  const idxSaldoInicial = celulas.findIndex((c) =>
-    /saldo\s+total\s+inicial/i.test(c),
-  );
-  if (idxSaldoInicial >= 0) {
-    for (let i = idxSaldoInicial + 1; i < Math.min(idxSaldoInicial + 8, celulas.length); i++) {
-      const v = parseValorBRL(celulas[i]);
-      if (v != null && v > 0) {
-        saldoInicial = v;
-        break;
-      }
-    }
-  }
-  if (saldoInicial === 0) {
-    avisos.push("Saldo inicial não encontrado (cessão talvez sem valor original definido).");
-  }
-
-  // 4) Total recebido e saldo a receber: os 2 primeiros valores BRL após
-  //    a primeira "Total Recebido" (antes do HISTORICOS)
+  // 3) Total recebido e saldo a receber: os 2 primeiros valores BRL após
+  //    a primeira "Total Recebido" (antes do HISTORICOS).
   let totalRecebido = 0;
   let saldoDevedor = 0;
   const idxHistoricos = celulas.findIndex((c) => /historicos?/i.test(c));
@@ -188,6 +174,21 @@ export function parsePlanilhaHistorico(
     // Típico: [total_recebido, saldo_a_receber]
     if (valoresEntre.length >= 1) totalRecebido = valoresEntre[0];
     if (valoresEntre.length >= 2) saldoDevedor = valoresEntre[1];
+  }
+
+  // 4) Saldo inicial = valor original da cessão. A planilha do contador NÃO
+  //    tem um campo confiável pra isso — o label "SALDO TOTAL INICIAL" é
+  //    seguido pela DATA do primeiro pagamento (não pelo valor inicial), o
+  //    que fazia o parser interpretar a data como número monstruoso.
+  //
+  //    A regra correta é: valor inicial = total já pago + saldo ainda a
+  //    receber. Bate com o "Total" do Resumo Geral do contador.
+  //
+  //    Se saldo a receber for negativo (overpay — cessionário pagou mais do
+  //    que devia), considera só o que foi recebido como valor inicial.
+  let saldoInicial = totalRecebido + Math.max(0, saldoDevedor);
+  if (saldoInicial === 0) {
+    avisos.push("Saldo inicial não encontrado (cessão talvez sem valor original definido).");
   }
 
   // 5) Lista de pagamentos: após o cabeçalho "DATA RECEBIMENTOS SALDO OBS",

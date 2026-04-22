@@ -159,6 +159,12 @@ export function UserMenu({ nome, email, role }: Props) {
                   onClick={() => setOpen(false)}
                 />
                 <MenuLink
+                  href="/dashboard/admin/importar-planilha"
+                  icon={<UploadIcon />}
+                  label="Importar planilha HTML"
+                  onClick={() => setOpen(false)}
+                />
+                <MenuLink
                   href="/dashboard/admin/logs"
                   icon={<FileIcon />}
                   label="Logs de auditoria"

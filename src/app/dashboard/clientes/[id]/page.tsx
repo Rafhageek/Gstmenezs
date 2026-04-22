@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/feedback";
 import { WhatsAppShareButton } from "@/components/whatsapp-share-button";
 import {
   formatBRL,
+  formatDataBR,
   formatDocumento,
   formatTelefone,
   digits,
@@ -176,12 +177,28 @@ export default async function ClienteDetalhesPage({ params }: Props) {
           Cessões deste cliente ({listaCessoes.length})
         </h2>
         <DataTable
-          headers={["Contrato", "Cessionário", "Valor", "Pago", "Status", ""]}
+          headers={[
+            "Data do contrato",
+            "Cessionário",
+            "% Cedida",
+            "Valor",
+            "Pago",
+            "Status",
+            "",
+          ]}
           rows={listaCessoes.map((c) => [
-            <span key="n" className="font-mono text-xs">
-              {c.numero_contrato}
+            <span key="d" className="font-mono text-xs">
+              {formatDataBR(c.data_cessao)}
             </span>,
             <span key="ce">{c.cessionario_nome}</span>,
+            <span key="pc" className="font-mono text-xs">
+              {c.percentual_cedido != null
+                ? `${Number(c.percentual_cedido).toLocaleString("pt-BR", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 4,
+                  })}%`
+                : "—"}
+            </span>,
             <span key="v" className="font-mono">
               {formatBRL(c.valor_total)}
             </span>,

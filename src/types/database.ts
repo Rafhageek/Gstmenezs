@@ -258,6 +258,8 @@ export interface CessaoResumo {
   data_vencimento_inicial: string;
   cliente_nome: string;
   cessionario_nome: string;
+  /** Percentual do crédito total do cedente transferido nesta cessão. */
+  percentual_cedido: number | null;
   primeira_parcela_atrasada: string | null;
 }
 

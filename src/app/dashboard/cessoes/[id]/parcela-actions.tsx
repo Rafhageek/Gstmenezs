@@ -327,11 +327,68 @@ export function VerComprovanteLink({ path }: { path: string }) {
       type="button"
       onClick={onClick}
       disabled={loading}
-      className="text-xs text-[var(--gold)] hover:underline disabled:opacity-60"
       title="Abrir comprovante (link válido por 5 minutos)"
+      className="inline-flex items-center gap-1.5 rounded-md border border-[var(--gold)]/40 bg-[var(--gold)]/10 px-2 py-1 text-[11px] font-medium text-[var(--gold)] transition-all hover:border-[var(--gold)] hover:bg-[var(--gold)]/20 disabled:cursor-not-allowed disabled:opacity-60"
     >
-      {loading ? "..." : "📎 Ver comprovante"}
+      <IconClip />
+      {loading ? "Abrindo..." : "Ver comprovante"}
     </button>
+  );
+}
+
+function IconClip() {
+  return (
+    <svg
+      width="11"
+      height="11"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 17.93 8.8l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+    </svg>
+  );
+}
+
+function IconPlus() {
+  return (
+    <svg
+      width="11"
+      height="11"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2.5}
+      strokeLinecap="round"
+      aria-hidden
+    >
+      <path d="M12 5v14M5 12h14" />
+    </svg>
+  );
+}
+
+function IconRefresh() {
+  return (
+    <svg
+      width="11"
+      height="11"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
+      <path d="M21 3v5h-5" />
+      <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
+      <path d="M3 21v-5h5" />
+    </svg>
   );
 }
 
@@ -396,14 +453,19 @@ export function AnexarComprovanteButton({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="text-xs text-[var(--muted)] transition-colors hover:text-[var(--gold)] hover:underline"
         title={
           jaTemComprovante
             ? "Substituir comprovante atual"
             : "Anexar comprovante"
         }
+        className={
+          jaTemComprovante
+            ? "inline-flex items-center gap-1.5 rounded-md border border-[var(--border)] bg-transparent px-2 py-1 text-[11px] font-medium text-[var(--muted)] transition-all hover:border-[var(--gold)]/60 hover:bg-[var(--gold)]/5 hover:text-[var(--gold)]"
+            : "inline-flex items-center gap-1.5 rounded-md border border-dashed border-[var(--gold)]/40 bg-[var(--gold)]/5 px-2 py-1 text-[11px] font-medium text-[var(--gold)]/90 transition-all hover:border-solid hover:border-[var(--gold)] hover:bg-[var(--gold)]/15"
+        }
       >
-        {jaTemComprovante ? "🔄 Substituir" : "📎 Anexar comprovante"}
+        {jaTemComprovante ? <IconRefresh /> : <IconPlus />}
+        {jaTemComprovante ? "Substituir" : "Anexar comprovante"}
       </button>
     );
   }

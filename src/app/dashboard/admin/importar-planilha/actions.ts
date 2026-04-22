@@ -43,7 +43,7 @@ export async function previewLimpezaImportacoes(
     .from("cessoes_credito")
     .select("id, cessionario_id, observacoes")
     .eq("cliente_principal_id", clienteId)
-    .like("observacoes", "[IMPORT]%");
+    .ilike("observacoes", "%[IMPORT]%");
 
   const cessoesIds = (cessoes ?? []).map((c) => c.id as string);
   const cessionariosIds = Array.from(
@@ -120,7 +120,7 @@ export async function limparImportacoesCliente(
     .from("cessoes_credito")
     .select("id, cessionario_id")
     .eq("cliente_principal_id", clienteId)
-    .like("observacoes", "[IMPORT]%");
+    .ilike("observacoes", "%[IMPORT]%");
 
   if (errCessoes) return { ...empty, error: errCessoes.message };
 

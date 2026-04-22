@@ -245,6 +245,23 @@ export function parsePlanilhaHistorico(
     }
   }
 
+  // Em algumas abas (DATEC, MB PART, SL-PRO LIFE, Queiroz II) o contador
+  // colocou o SALDO INICIAL na coluna RECEBIMENTOS da primeira linha do
+  // histórico, fazendo o parser interpretá-lo como pagamento e dobrar o
+  // valor recebido. Detecta isso: se o primeiro "pagamento" tem valor
+  // exatamente igual ao saldo inicial esperado, é lançamento de abertura
+  // — descarta.
+  if (
+    pagamentos.length > 0 &&
+    saldoInicial > 0 &&
+    Math.abs(pagamentos[0].valor - saldoInicial) < 0.5
+  ) {
+    pagamentos.shift();
+    avisos.push(
+      "Primeira linha do histórico era saldo inicial duplicado — descartada.",
+    );
+  }
+
   if (pagamentos.length === 0) {
     avisos.push("Nenhum pagamento encontrado no histórico.");
   }

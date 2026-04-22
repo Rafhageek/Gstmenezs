@@ -66,7 +66,7 @@ export async function importarPlanilhaHistorico(
   for (let idx = 0; idx < cessionarios.length; idx++) {
     const c = cessionarios[idx];
     try {
-      await importarUmCessionario(supabase, {
+      const r = await importarUmCessionario(supabase, {
         cliente,
         cessionario: c,
         userId: user.id,
@@ -75,7 +75,7 @@ export async function importarPlanilhaHistorico(
       });
       placeholderSeq++;
       result.cessionariosCriados += 1;
-      result.cessoesCriadas += 1;
+      if (r.cessaoCriada) result.cessoesCriadas += 1;
       result.pagamentosCriados += c.pagamentos.length;
     } catch (e) {
       const motivo = e instanceof Error ? e.message : String(e);
@@ -102,7 +102,7 @@ interface ImportarUmArgs {
 async function importarUmCessionario(
   supabase: SupabaseClient,
   args: ImportarUmArgs,
-): Promise<void> {
+): Promise<{ cessaoCriada: boolean }> {
   const { cliente, cessionario, userId, numeroContrato, documentoPlaceholder } =
     args;
 
@@ -144,8 +144,14 @@ async function importarUmCessionario(
     cessionarioId = novo.id;
   }
 
-  // 2) Cria cessão (trigger vai gerar parcelas em branco — vamos deletar depois)
+  // Se cessionário não tem pagamentos nem saldo inicial, não cria cessão
+  // (fica só cadastrado, sem movimento — Dr. Jairo cria cessão depois)
   const somaPagos = cessionario.pagamentos.reduce((s, p) => s + p.valor, 0);
+  if (cessionario.pagamentos.length === 0 && cessionario.saldoInicial <= 0) {
+    return { cessaoCriada: false };
+  }
+
+  // 2) Cria cessão (trigger vai gerar parcelas em branco — vamos deletar depois)
   const valorTotal = Math.max(cessionario.saldoInicial, somaPagos, 0.01);
   const primeiraData = cessionario.pagamentos[0]?.data ?? new Date().toISOString().slice(0, 10);
   const ultimaData =
@@ -195,4 +201,6 @@ async function importarUmCessionario(
     const { error: errIns } = await supabase.from("pagamentos").insert(inserts);
     if (errIns) throw new Error(`pagamentos: ${errIns.message}`);
   }
+
+  return { cessaoCriada: true };
 }

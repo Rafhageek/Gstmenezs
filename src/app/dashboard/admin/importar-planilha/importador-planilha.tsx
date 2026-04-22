@@ -70,21 +70,23 @@ export function ImportadorPlanilha({ clientes }: Props) {
             });
             continue;
           }
-          if (
-            /resumo/i.test(file.name) ||
-            /mov\s+mes/i.test(file.name) ||
-            cessionario.pagamentos.length === 0
-          ) {
+          // Pula apenas arquivos de resumo que não representam cessionários
+          if (/^resumo/i.test(file.name) || /^mov\s+mes/i.test(file.name)) {
             erros.push({
               arquivo: file.name,
-              mensagem:
-                cessionario.pagamentos.length === 0
-                  ? "Sem pagamentos (pulado)"
-                  : "Arquivo de resumo (pulado)",
+              mensagem: "Arquivo de resumo (pulado)",
             });
             continue;
           }
-          previews.push({ ...cessionario, avisos });
+          // Aceita cessionário mesmo sem pagamentos (será criado como "ativa sem movimento")
+          if (cessionario.pagamentos.length === 0) {
+            previews.push({
+              ...cessionario,
+              avisos: [...avisos, "Sem pagamentos registrados — será criado como ativa sem movimento"],
+            });
+          } else {
+            previews.push({ ...cessionario, avisos });
+          }
         } catch (e) {
           const msg = e instanceof Error ? e.message : String(e);
           erros.push({ arquivo: file.name, mensagem: msg });

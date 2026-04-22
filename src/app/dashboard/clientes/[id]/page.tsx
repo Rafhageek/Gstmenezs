@@ -6,6 +6,8 @@ import { DataTable } from "@/components/ui/data-table";
 import { Pagination } from "@/components/ui/pagination";
 import { Badge } from "@/components/ui/feedback";
 import { WhatsAppShareButton } from "@/components/whatsapp-share-button";
+import { LimparImportacoesButton } from "./limpar-importacoes-button";
+import { previewLimpezaImportacoes } from "@/app/dashboard/admin/importar-planilha/actions";
 import {
   formatBRL,
   formatDataBR,
@@ -74,6 +76,23 @@ export default async function ClienteDetalhesPage({
     .select("pagamento_id", { count: "exact", head: true })
     .eq("cliente_id", id);
 
+  // Verifica se usuário é admin pra liberar botão de limpeza de importações
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  let isAdmin = false;
+  if (user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single<{ role: string }>();
+    isAdmin = profile?.role === "admin";
+  }
+  const limpezaPreview = isAdmin
+    ? await previewLimpezaImportacoes(id)
+    : { cessoes: 0, pagamentos: 0, cessionariosOrfaos: 0 };
+
   return (
     <div>
       <PageHeader
@@ -139,6 +158,13 @@ export default async function ClienteDetalhesPage({
           mensagem={`Prezado(a) ${cliente.nome}, segue o seu extrato consolidado.\n\nAtenciosamente, Menezes Advocacia.`}
           telefone={prepararTelWa(cliente.telefone)}
         />
+        {isAdmin && limpezaPreview.cessoes > 0 && (
+          <LimparImportacoesButton
+            clienteId={cliente.id}
+            clienteNome={cliente.nome}
+            preview={limpezaPreview}
+          />
+        )}
       </div>
 
       {extrato && (

@@ -197,19 +197,51 @@ export async function ativarCessionariosEmMassa(
   if (ids.length === 0) return result;
 
   const supabase = await createClient();
-  const { error, count } = await supabase
-    .from("cessionarios")
-    .update({ ativo }, { count: "exact" })
-    .in("id", ids);
 
-  if (error) {
-    result.falhas = ids.map((id) => ({ id, motivo: error.message }));
-  } else {
-    result.ok = count ?? ids.length;
+  const { data: nomesRes } = await supabase
+    .from("cessionarios")
+    .select("id, nome")
+    .in("id", ids);
+  const nomeMap = new Map(
+    (nomesRes ?? []).map((c) => [c.id as string, c.nome as string]),
+  );
+
+  // Um-a-um pra isolar falhas
+  for (const id of ids) {
+    const { error } = await supabase
+      .from("cessionarios")
+      .update({ ativo })
+      .eq("id", id);
+    if (error) {
+      console.error(
+        `[ativarCessionariosEmMassa] id=${id} erro:`,
+        JSON.stringify(error, null, 2),
+      );
+      result.falhas.push({
+        id,
+        nome: nomeMap.get(id),
+        motivo: traduzirErroCessionario(error),
+      });
+    } else {
+      result.ok += 1;
+    }
   }
 
   revalidatePath("/dashboard/cessionarios");
   return result;
+}
+
+function traduzirErroCessionario(error: {
+  code?: string;
+  message: string;
+}): string {
+  if (error.code === "23505") {
+    return "conflito de CPF/CNPJ duplicado no banco (contate o suporte)";
+  }
+  if (error.code === "23503") {
+    return "possui registros vinculados";
+  }
+  return error.message;
 }
 
 function toFieldErrors(

@@ -189,19 +189,50 @@ export async function ativarClientesEmMassa(
   if (ids.length === 0) return result;
 
   const supabase = await createClient();
-  const { error, count } = await supabase
-    .from("clientes_principais")
-    .update({ ativo }, { count: "exact" })
-    .in("id", ids);
 
-  if (error) {
-    result.falhas = ids.map((id) => ({ id, motivo: error.message }));
-  } else {
-    result.ok = count ?? ids.length;
+  // Busca nomes pra mensagens amigáveis
+  const { data: nomesRes } = await supabase
+    .from("clientes_principais")
+    .select("id, nome")
+    .in("id", ids);
+  const nomeMap = new Map(
+    (nomesRes ?? []).map((c) => [c.id as string, c.nome as string]),
+  );
+
+  // Atualiza um-a-um pra isolar falhas (se um violar constraint,
+  // não derruba o lote inteiro)
+  for (const id of ids) {
+    const { error } = await supabase
+      .from("clientes_principais")
+      .update({ ativo })
+      .eq("id", id);
+    if (error) {
+      console.error(
+        `[ativarClientesEmMassa] id=${id} erro:`,
+        JSON.stringify(error, null, 2),
+      );
+      result.falhas.push({
+        id,
+        nome: nomeMap.get(id),
+        motivo: traduzirErro(error),
+      });
+    } else {
+      result.ok += 1;
+    }
   }
 
   revalidatePath("/dashboard/clientes");
   return result;
+}
+
+function traduzirErro(error: { code?: string; message: string }): string {
+  if (error.code === "23505") {
+    return "conflito de CPF/CNPJ duplicado no banco (contate o suporte)";
+  }
+  if (error.code === "23503") {
+    return "possui registros vinculados";
+  }
+  return error.message;
 }
 
 function toFieldErrors(err: import("zod").ZodError): ClienteFormState {

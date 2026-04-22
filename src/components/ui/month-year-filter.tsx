@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useTransition } from "react";
+import { StyledSelect } from "./styled-select";
 
 interface Props {
   paramMes?: string;
@@ -11,19 +12,20 @@ interface Props {
   anos?: number[];
 }
 
-const MESES = [
-  { v: "1", n: "Janeiro" },
-  { v: "2", n: "Fevereiro" },
-  { v: "3", n: "Março" },
-  { v: "4", n: "Abril" },
-  { v: "5", n: "Maio" },
-  { v: "6", n: "Junho" },
-  { v: "7", n: "Julho" },
-  { v: "8", n: "Agosto" },
-  { v: "9", n: "Setembro" },
-  { v: "10", n: "Outubro" },
-  { v: "11", n: "Novembro" },
-  { v: "12", n: "Dezembro" },
+const MESES_OPTS = [
+  { value: "", label: "Todos os meses" },
+  { value: "1", label: "Janeiro" },
+  { value: "2", label: "Fevereiro" },
+  { value: "3", label: "Março" },
+  { value: "4", label: "Abril" },
+  { value: "5", label: "Maio" },
+  { value: "6", label: "Junho" },
+  { value: "7", label: "Julho" },
+  { value: "8", label: "Agosto" },
+  { value: "9", label: "Setembro" },
+  { value: "10", label: "Outubro" },
+  { value: "11", label: "Novembro" },
+  { value: "12", label: "Dezembro" },
 ];
 
 /**
@@ -69,38 +71,35 @@ export function MonthYearFilter({
 
   const hasFilter = mes || ano;
 
+  const anosOpts = [
+    { value: "", label: "Todos os anos" },
+    ...listaAnos.map((a) => ({ value: String(a), label: String(a) })),
+  ];
+
   return (
     <div className="flex flex-wrap items-center gap-2">
       <span className="text-xs text-[var(--muted)]">{label}:</span>
-      <select
+      <StyledSelect
         value={mes}
-        onChange={(e) => atualizar("mes", e.target.value)}
-        className="rounded-lg border border-[var(--border)] bg-black/30 px-2 py-1.5 text-sm text-foreground outline-none transition-colors focus:border-[var(--gold)] focus:ring-1 focus:ring-[var(--gold)]"
-      >
-        <option value="">Mês</option>
-        {MESES.map((m) => (
-          <option key={m.v} value={m.v}>
-            {m.n}
-          </option>
-        ))}
-      </select>
-      <select
+        onChange={(v) => atualizar("mes", v)}
+        options={MESES_OPTS}
+        placeholder="Mês"
+        ariaLabel="Filtrar por mês"
+        widthClass="w-36"
+      />
+      <StyledSelect
         value={ano}
-        onChange={(e) => atualizar("ano", e.target.value)}
-        className="rounded-lg border border-[var(--border)] bg-black/30 px-2 py-1.5 text-sm text-foreground outline-none transition-colors focus:border-[var(--gold)] focus:ring-1 focus:ring-[var(--gold)]"
-      >
-        <option value="">Ano</option>
-        {listaAnos.map((a) => (
-          <option key={a} value={a}>
-            {a}
-          </option>
-        ))}
-      </select>
+        onChange={(v) => atualizar("ano", v)}
+        options={anosOpts}
+        placeholder="Ano"
+        ariaLabel="Filtrar por ano"
+        widthClass="w-32"
+      />
       {hasFilter && (
         <button
           type="button"
           onClick={limpar}
-          className="text-xs text-[var(--muted)] hover:text-[var(--gold)] hover:underline"
+          className="text-xs text-[var(--muted)] transition-colors hover:text-[var(--gold)] hover:underline"
         >
           × limpar
         </button>

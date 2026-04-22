@@ -136,6 +136,7 @@ export default async function CessionariosPage({
       <PageHeader
         titulo="Cessionários"
         descricao="Recebedores das cessões de crédito."
+        acaoSecundaria={{ label: "Clientes", href: "/dashboard/clientes" }}
         acao={{
           label: "+ Novo cessionário",
           href: "/dashboard/cessionarios/novo",

@@ -97,6 +97,10 @@ export default async function ClientesPage({
       <PageHeader
         titulo="Clientes Principais"
         descricao="Cedentes do crédito (titulares dos recebíveis)."
+        acaoSecundaria={{
+          label: "Cessionários",
+          href: "/dashboard/cessionarios",
+        }}
         acao={{ label: "+ Novo cliente", href: "/dashboard/clientes/novo" }}
       />
 

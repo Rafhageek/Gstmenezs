@@ -10,12 +10,63 @@ interface Props {
   atrasadas: InadimplenciaItem[];
 }
 
+const DISPENSADAS_KEY = "painelmnz:notif-dispensadas";
+
+function lerDispensadas(): Set<string> {
+  if (typeof window === "undefined") return new Set();
+  try {
+    const v = localStorage.getItem(DISPENSADAS_KEY);
+    return new Set(v ? (JSON.parse(v) as string[]) : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function salvarDispensadas(ids: Set<string>) {
+  try {
+    localStorage.setItem(DISPENSADAS_KEY, JSON.stringify([...ids]));
+  } catch {
+    /* ignore quota/private mode */
+  }
+}
+
 export function NotificationsBell({ proximas, atrasadas }: Props) {
   const [open, setOpen] = useState(false);
+  const [dispensadas, setDispensadas] = useState<Set<string>>(new Set());
+  const [hidratado, setHidratado] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  const total = proximas.length + atrasadas.length;
-  const temUrgente = atrasadas.length > 0;
+  useEffect(() => {
+    setDispensadas(lerDispensadas());
+    setHidratado(true);
+  }, []);
+
+  // Filtra itens dispensados (antes da hidratação mostra tudo p/ evitar flash)
+  const proximasV = hidratado
+    ? proximas.filter((p) => !dispensadas.has(p.pagamento_id))
+    : proximas;
+  const atrasadasV = hidratado
+    ? atrasadas.filter((i) => !dispensadas.has(i.pagamento_id))
+    : atrasadas;
+
+  const total = proximasV.length + atrasadasV.length;
+  const totalOriginal = proximas.length + atrasadas.length;
+  const temDispensadas = totalOriginal > total;
+  const temUrgente = atrasadasV.length > 0;
+
+  function limparTudo() {
+    const novas = new Set(dispensadas);
+    for (const p of proximasV) novas.add(p.pagamento_id);
+    for (const i of atrasadasV) novas.add(i.pagamento_id);
+    setDispensadas(novas);
+    salvarDispensadas(novas);
+  }
+
+  function restaurar() {
+    const vazio = new Set<string>();
+    setDispensadas(vazio);
+    salvarDispensadas(vazio);
+  }
 
   useEffect(() => {
     function onClickAway(e: MouseEvent) {
@@ -83,12 +134,12 @@ export function NotificationsBell({ proximas, atrasadas }: Props) {
           </header>
 
           <div className="max-h-[480px] overflow-y-auto">
-            {atrasadas.length > 0 && (
+            {atrasadasV.length > 0 && (
               <Secao
-                titulo={`Em atraso (${atrasadas.length})`}
+                titulo={`Em atraso (${atrasadasV.length})`}
                 cor="danger"
               >
-                {atrasadas.slice(0, 5).map((i) => (
+                {atrasadasV.slice(0, 5).map((i) => (
                   <LinhaNotificacao
                     key={i.pagamento_id}
                     href={`/dashboard/cessoes/${i.cessao_id}`}
@@ -100,24 +151,24 @@ export function NotificationsBell({ proximas, atrasadas }: Props) {
                     cor="danger"
                   />
                 ))}
-                {atrasadas.length > 5 && (
+                {atrasadasV.length > 5 && (
                   <Link
                     href="/dashboard/pagamentos?filtro=atrasados"
                     onClick={() => setOpen(false)}
                     className="block border-t border-[var(--border)] px-4 py-2 text-center text-xs text-[var(--gold)] hover:underline"
                   >
-                    Ver todas ({atrasadas.length}) →
+                    Ver todas ({atrasadasV.length}) →
                   </Link>
                 )}
               </Secao>
             )}
 
-            {proximas.length > 0 && (
+            {proximasV.length > 0 && (
               <Secao
-                titulo={`Vencem nos próximos 7 dias (${proximas.length})`}
+                titulo={`Vencem nos próximos 7 dias (${proximasV.length})`}
                 cor="gold"
               >
-                {proximas.slice(0, 5).map((p) => (
+                {proximasV.slice(0, 5).map((p) => (
                   <LinhaNotificacao
                     key={p.pagamento_id}
                     href={`/dashboard/cessoes/${p.cessao_id}`}
@@ -133,7 +184,7 @@ export function NotificationsBell({ proximas, atrasadas }: Props) {
                     cor="gold"
                   />
                 ))}
-                {proximas.length > 5 && (
+                {proximasV.length > 5 && (
                   <Link
                     href="/dashboard/agenda"
                     onClick={() => setOpen(false)}
@@ -150,13 +201,44 @@ export function NotificationsBell({ proximas, atrasadas }: Props) {
                 <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-[var(--success)]/15 text-[var(--success)]">
                   ✓
                 </div>
-                <p className="text-sm">Sem pendências</p>
+                <p className="text-sm">
+                  {temDispensadas ? "Lista limpa" : "Sem pendências"}
+                </p>
                 <p className="mt-1 text-xs text-[var(--muted)]">
-                  Nenhuma parcela vence nos próximos 7 dias e tudo está em dia.
+                  {temDispensadas
+                    ? "Você dispensou as notificações recentes."
+                    : "Nenhuma parcela vence nos próximos 7 dias e tudo está em dia."}
                 </p>
               </div>
             )}
           </div>
+
+          {(total > 0 || temDispensadas) && (
+            <footer className="flex items-center justify-between gap-2 border-t border-[var(--border)] bg-black/20 px-3 py-2">
+              {temDispensadas ? (
+                <button
+                  type="button"
+                  onClick={restaurar}
+                  className="text-xs text-[var(--gold)] hover:underline"
+                >
+                  Restaurar ({totalOriginal - total} ocultas)
+                </button>
+              ) : (
+                <span className="text-[10px] text-[var(--muted)]">
+                  Dispensar some daqui, dados originais ficam intactos.
+                </span>
+              )}
+              {total > 0 && (
+                <button
+                  type="button"
+                  onClick={limparTudo}
+                  className="rounded-md border border-[var(--border)] px-3 py-1 text-xs text-[var(--muted)] transition-colors hover:border-[var(--gold)] hover:text-[var(--gold)]"
+                >
+                  Limpar lista
+                </button>
+              )}
+            </footer>
+          )}
         </div>
       )}
     </div>

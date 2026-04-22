@@ -6,7 +6,6 @@ import { BrandLogo } from "@/components/brand-logo";
 import { NotificationsBell } from "@/components/notifications-bell";
 import { CommandPalette } from "@/components/command-palette";
 import { NavLink } from "@/components/nav-link";
-import { NavDropdown } from "@/components/nav-dropdown";
 import { UserMenu } from "@/components/user-menu";
 import { Footer } from "@/components/footer";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -102,21 +101,7 @@ export default async function DashboardLayout({
               Visão geral
             </NavLink>
 
-            <NavDropdown
-              label="Clientes"
-              items={[
-                {
-                  href: "/dashboard/clientes",
-                  label: "Clientes",
-                  descricao: "Cedentes do crédito",
-                },
-                {
-                  href: "/dashboard/cessionarios",
-                  label: "Cessionários",
-                  descricao: "Recebedores das cessões",
-                },
-              ]}
-            />
+            <NavLink href="/dashboard/clientes">Clientes</NavLink>
 
             <NavLink href="/dashboard/relatorios">Relatórios</NavLink>
           </nav>

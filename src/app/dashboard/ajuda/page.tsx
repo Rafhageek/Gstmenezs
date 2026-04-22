@@ -155,6 +155,21 @@ export default function AjudaPage() {
         descricao="Guia rápido de como usar o Painel Financeiro no dia a dia."
       />
 
+      <div className="-mt-2 mb-6 flex flex-wrap gap-3">
+        <a
+          href="/api/manual"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 rounded-lg bg-[var(--gold)] px-5 py-2.5 text-sm font-semibold text-[var(--background)] transition-colors hover:bg-[var(--gold-hover)]"
+        >
+          ⬇ Baixar manual completo (PDF)
+        </a>
+        <p className="self-center text-xs text-[var(--muted)]">
+          Manual de 7 páginas com todos os fluxos detalhados — pra imprimir ou
+          compartilhar via WhatsApp.
+        </p>
+      </div>
+
       <nav className="mb-8 rounded-xl border border-[var(--border)] bg-[var(--background-elevated)] p-5">
         <p className="mb-3 text-xs uppercase tracking-wide text-[var(--muted)]">
           Sumário

@@ -200,7 +200,7 @@ export default async function ClienteDetalhesPage({
           />
           <Kpi
             label="Cessões"
-            value={`${extrato.total_cessoes} (${extrato.cessoes_quitadas} quit.)`}
+            value={`${extrato.cessoes_ativas} ativas · ${extrato.cessoes_quitadas} quit.`}
           />
         </section>
       )}
@@ -225,17 +225,18 @@ export default async function ClienteDetalhesPage({
             "Data do contrato",
             "Cessionário",
             "% Cedida",
-            "Valor",
+            "Valor do contrato",
             "Pago",
+            "A receber",
             "Status",
             "",
           ]}
           rows={listaCessoes.map((c) => [
-            <span key="d" className="font-mono text-xs">
+            <span key="d" className="whitespace-nowrap font-mono text-xs">
               {formatDataBR(c.data_cessao)}
             </span>,
             <span key="ce">{c.cessionario_nome}</span>,
-            <span key="pc" className="font-mono text-xs">
+            <span key="pc" className="whitespace-nowrap font-mono text-xs">
               {c.percentual_cedido != null
                 ? `${Number(c.percentual_cedido).toLocaleString("pt-BR", {
                     minimumFractionDigits: 2,
@@ -243,11 +244,14 @@ export default async function ClienteDetalhesPage({
                   })}%`
                 : "—"}
             </span>,
-            <span key="v" className="font-mono">
+            <span key="v" className="whitespace-nowrap font-mono">
               {formatBRL(c.valor_total)}
             </span>,
-            <span key="p" className="font-mono text-[var(--success)]">
+            <span key="p" className="whitespace-nowrap font-mono text-[var(--success)]">
               {formatBRL(c.valor_pago)}
+            </span>,
+            <span key="ar" className="whitespace-nowrap font-mono text-[var(--gold)]">
+              {formatBRL(c.saldo_devedor)}
             </span>,
             <StatusBadgeView
               key="s"

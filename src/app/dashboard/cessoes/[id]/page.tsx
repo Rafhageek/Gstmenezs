@@ -90,8 +90,7 @@ export default async function CessaoDetalhesPage({ params }: Props) {
       />
       <PageHeader
         eyebrow="Cessão de crédito"
-        titulo={`Contrato ${cessao.numero_contrato}`}
-        descricao={`${cessao.cliente_principal.nome} → ${cessao.cessionario.nome}`}
+        titulo={cessao.cessionario.nome}
       />
 
       <div className="-mt-6 mb-8 flex flex-wrap gap-3" data-no-print>
@@ -126,7 +125,7 @@ export default async function CessaoDetalhesPage({ params }: Props) {
       <section className="grid grid-cols-1 gap-4 md:grid-cols-4">
         <Kpi label="Valor total" value={formatBRL(cessao.valor_total)} />
         <Kpi label="Pago" value={formatBRL(cessao.valor_pago)} accent="success" />
-        <Kpi label="Saldo devedor" value={formatBRL(saldo)} accent="gold" />
+        <Kpi label="Valor a receber" value={formatBRL(saldo)} accent="danger" />
         <Kpi
           label={
             cessao.percentual_cedido != null ? "% Cedido" : "% Pago"

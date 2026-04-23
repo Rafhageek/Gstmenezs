@@ -216,7 +216,7 @@ export default async function ClienteDetalhesPage({
           <Kpi
             label="Saldo a receber"
             value={formatBRL(extrato.saldo_devedor)}
-            accent="gold"
+            accent="danger"
           />
           <Kpi
             label="Cessões"

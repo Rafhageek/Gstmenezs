@@ -40,7 +40,7 @@ export default async function ClienteDetalhesPage({
   const { id } = await params;
   const sp = await searchParams;
   const filtro: Filtro =
-    sp.filtro === "ativas" || sp.filtro === "inativas" ? sp.filtro : "todas";
+    sp.filtro === "todas" || sp.filtro === "inativas" ? sp.filtro : "ativas";
   const page = Math.max(1, Number(sp.page) || 1);
   const offset = (page - 1) * PAGE_SIZE;
   const supabase = await createClient();
@@ -251,7 +251,7 @@ export default async function ClienteDetalhesPage({
             ).map(({ key, label }) => (
               <Link
                 key={key}
-                href={`/dashboard/clientes/${id}${key !== "todas" ? `?filtro=${key}` : ""}`}
+                href={`/dashboard/clientes/${id}${key !== "ativas" ? `?filtro=${key}` : ""}`}
                 className={`rounded-md px-3 py-1 text-xs font-medium transition-colors ${
                   filtro === key
                     ? "bg-[var(--gold)] text-[var(--background)]"

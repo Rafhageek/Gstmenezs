@@ -61,12 +61,21 @@ export default async function ClienteDetalhesPage({
     .from("v_cessoes_resumo")
     .select("*", { count: "exact" })
     .eq("cliente_id", id)
-    .order("data_cessao", { ascending: false })
+    .order("data_cessao", { ascending: true })
     .range(offset, offset + PAGE_SIZE - 1)
     .returns<CessaoResumo[]>();
 
   const extrato = extratoRes.data;
-  const listaCessoes = cessoes ?? [];
+
+  const statusPriority: Record<CessaoResumo["status"], number> = {
+    inadimplente: 0,
+    ativa: 1,
+    cancelada: 2,
+    quitada: 3,
+  };
+  const listaCessoes = (cessoes ?? []).sort(
+    (a, b) => statusPriority[a.status] - statusPriority[b.status],
+  );
   const total = totalCessoes ?? listaCessoes.length;
 
   // Conta parcelas em atraso pra esse cliente

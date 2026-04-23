@@ -14,20 +14,8 @@ import type {
   ComparativoMes,
   ResumoGeral,
   ParcelaProxima,
-  Profile,
 } from "@/types/database";
 
-function saudacaoHora(): string {
-  const hora = new Date().toLocaleString("en-US", {
-    timeZone: "America/Sao_Paulo",
-    hour: "numeric",
-    hour12: false,
-  });
-  const h = Number(hora);
-  if (h >= 6 && h < 12) return "Bom dia";
-  if (h >= 12 && h < 18) return "Boa tarde";
-  return "Boa noite";
-}
 
 export const metadata = {
   title: "Visão geral — Painel Financeiro",
@@ -97,7 +85,6 @@ export default async function DashboardPage({
     compRes,
     resumoRes,
     proximasRes,
-    profileRes,
   ] = await Promise.all([
     cessoesQuery.returns<CessaoResumo[]>(),
     supabase.from("v_fluxo_mensal").select("*").returns<FluxoMensal[]>(),
@@ -117,13 +104,6 @@ export default async function DashboardPage({
       .lte("dias_ate_vencer", 7)
       .order("dias_ate_vencer", { ascending: true })
       .returns<ParcelaProxima[]>(),
-    user
-      ? supabase
-          .from("profiles")
-          .select("nome")
-          .eq("id", user.id)
-          .maybeSingle<Pick<Profile, "nome">>()
-      : Promise.resolve({ data: null }),
   ]);
 
   if (cessoesRes.error) {
@@ -136,7 +116,6 @@ export default async function DashboardPage({
   const comparativo = compRes.data;
   const resumoGeral = resumoRes.data;
   const proximas = proximasRes.data ?? [];
-  const nomeUsuario = profileRes.data?.nome?.split(" ")[0] ?? null;
 
   const cessoesAtivas = cessoes.filter((c) => c.status !== "quitada");
   const liquidadasNoFiltro = cessoes.filter((c) => c.status === "quitada");
@@ -181,10 +160,6 @@ export default async function DashboardPage({
         <p className="text-xs uppercase tracking-[0.3em] text-[var(--gold)]">
           Visão geral
         </p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight md:text-4xl">
-          {saudacaoHora()}
-          {nomeUsuario ? `, ${nomeUsuario}` : ""}
-        </h1>
         {labelPeriodo && (
           <p className="mt-2 text-sm text-[var(--gold)]">
             Filtrado por: <strong>{labelPeriodo}</strong>

@@ -11,7 +11,7 @@ import { formatDocumento, formatTelefone, digits } from "@/lib/format";
 import type { ClientePrincipal, InadimplenciaItem } from "@/types/database";
 
 export const metadata = {
-  title: "Clientes Principais — Painel Financeiro",
+  title: "Clientes — Painel Financeiro",
 };
 
 const PAGE_SIZE = 20;
@@ -70,7 +70,7 @@ export default async function ClientesPage({
   if (error) {
     return (
       <div>
-        <PageHeader titulo="Clientes Principais" />
+        <PageHeader titulo="Clientes" />
         <p className="text-sm text-[var(--danger)]">Erro: {error.message}</p>
       </div>
     );
@@ -96,7 +96,7 @@ export default async function ClientesPage({
   return (
     <div>
       <PageHeader
-        titulo="Clientes Principais"
+        titulo="Clientes"
         descricao="Cedentes do crédito (titulares dos recebíveis)."
         acaoSecundaria={{
           label: "Cessionários",
@@ -111,6 +111,7 @@ export default async function ClientesPage({
 
       <ClientesTableBulk
         items={clientes.map((c) => ({ id: c.id, nome: c.nome }))}
+        rowHrefs={clientes.map((c) => `/dashboard/clientes/${c.id}`)}
         headers={[
           <SortableHeader key="nome" label="Nome" column="nome" />,
           <SortableHeader
@@ -140,7 +141,12 @@ export default async function ClientesPage({
               />
             )}
             <div>
-              <div className="font-medium">{c.nome}</div>
+              <Link
+                href={`/dashboard/clientes/${c.id}`}
+                className="font-medium hover:text-[var(--gold)] hover:underline"
+              >
+                {c.nome}
+              </Link>
               {inad && (
                 <div className="text-[10px] text-[var(--danger)]">
                   ⚠ {inad.qtd} parcela{inad.qtd === 1 ? "" : "s"} em atraso

@@ -26,9 +26,11 @@ export const metadata = {
 
 const PAGE_SIZE = 40;
 
+type Filtro = "todas" | "ativas" | "inativas";
+
 interface Props {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{ page?: string; filtro?: string }>;
 }
 
 export default async function ClienteDetalhesPage({
@@ -37,6 +39,8 @@ export default async function ClienteDetalhesPage({
 }: Props) {
   const { id } = await params;
   const sp = await searchParams;
+  const filtro: Filtro =
+    sp.filtro === "ativas" || sp.filtro === "inativas" ? sp.filtro : "todas";
   const page = Math.max(1, Number(sp.page) || 1);
   const offset = (page - 1) * PAGE_SIZE;
   const supabase = await createClient();
@@ -57,11 +61,18 @@ export default async function ClienteDetalhesPage({
   if (!clienteRes.data) notFound();
   const cliente = clienteRes.data;
 
-  const { data: cessoes, count: totalCessoes } = await supabase
+  let cessoesQuery = supabase
     .from("v_cessoes_resumo")
     .select("*", { count: "exact" })
     .eq("cliente_id", id)
-    .order("data_cessao", { ascending: true })
+    .order("data_cessao", { ascending: true });
+
+  if (filtro === "ativas")
+    cessoesQuery = cessoesQuery.or("status.eq.ativa,status.eq.inadimplente");
+  if (filtro === "inativas")
+    cessoesQuery = cessoesQuery.or("status.eq.quitada,status.eq.cancelada");
+
+  const { data: cessoes, count: totalCessoes } = await cessoesQuery
     .range(offset, offset + PAGE_SIZE - 1)
     .returns<CessaoResumo[]>();
 
@@ -226,9 +237,32 @@ export default async function ClienteDetalhesPage({
       )}
 
       <section>
-        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">
-          Cessões deste cliente ({total})
-        </h2>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">
+            Cessões deste cliente ({total})
+          </h2>
+          <div className="flex gap-1 rounded-lg border border-[var(--border)] bg-[var(--background-elevated)] p-1">
+            {(
+              [
+                { key: "todas", label: "Todas" },
+                { key: "ativas", label: "Ativas" },
+                { key: "inativas", label: "Inativas" },
+              ] as { key: Filtro; label: string }[]
+            ).map(({ key, label }) => (
+              <Link
+                key={key}
+                href={`/dashboard/clientes/${id}${key !== "todas" ? `?filtro=${key}` : ""}`}
+                className={`rounded-md px-3 py-1 text-xs font-medium transition-colors ${
+                  filtro === key
+                    ? "bg-[var(--gold)] text-[var(--background)]"
+                    : "text-[var(--muted)] hover:text-foreground"
+                }`}
+              >
+                {label}
+              </Link>
+            ))}
+          </div>
+        </div>
         <DataTable
           headers={[
             "Data do contrato",
